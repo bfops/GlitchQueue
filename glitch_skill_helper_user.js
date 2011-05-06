@@ -1,11 +1,14 @@
 // ==UserScript==
 // @name           Glitch Skill Helper
 // @namespace      http://alpha.glitch.com/profiles/PIF6RN35T3D1DT2/
-// @version        0.1.6
+// @version        0.1.7
 // @include        http://alpha.glitch.com
+// @include        http://beta.glitch.com
 // @include        http://alpha.glitch.com/
+// @include        http://beta.glitch.com/
 // @include        http://alpha.glitch.com/#
-// @description	   Helps you queue skills for learning in Glitch. $LastChangedDate: 2011-01-15 01:31:16 +0800 (Sat, 15 Jan 2011) $ $Rev: 54 $
+// @include        http://beta.glitch.com/#
+// @description	   Helps you queue skills for learning in Glitch. $LastChangedDate: 2011-04-19 11:15:59 +0800 (Tue, 19 Apr 2011) $ $Rev: 142 $
 // ==/UserScript==
 
 /* Changelog:
@@ -15,6 +18,8 @@
 	- Fix excessive polling when skill is being learnt
 0.1.6 (2011.01.15)
 	- Fix bug with invalid skill in queue
+0.1.7 (2011.04.19)
+	- Helloooo beta!
 */
 (function() {
 
@@ -34,10 +39,10 @@ var CACHE_AGE = 30*60;	// age of availble skills cache to keep before refresh
 /**
  * Version information
  */
-var VERSION = "0.1.0"
+var VERSION = "0.1.7"
 function about() { alert ("Version: " + VERSION 
-	+ "\n" + " $Rev: 54 $ "
-	+ "\n" + " $Date: 2011-01-15 01:31:16 +0800 (Sat, 15 Jan 2011) $ "); }
+	+ "\n" + " $Rev: 142 $ "
+	+ "\n" + " $Date: 2011-04-19 11:15:59 +0800 (Tue, 19 Apr 2011) $ "); }
 if (!(typeof GM_registerMenuCommand === 'undefined')) { 
 	GM_registerMenuCommand("Glitch Skill Helper - About", about); 
 }
