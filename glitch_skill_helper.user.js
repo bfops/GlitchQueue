@@ -430,10 +430,19 @@ function pollJob() {
 		}
 		if (currentSkillExpires < time()) {	//  nothing is being learnt and skills are queued
 			doAvailableSkillsCache();
-			while(q.length > 0 && !gQ.availableSkills[q[0]])
-				gQ.removeSkillFromQueue(q[0]);
-			if(q.length > 0) {
-			// submit job
+			if(q.length == 0)
+				return;
+
+			// move all unlearnable skills to the end of the queue
+			var unlearnableCount = 0;
+			for(unlearnableCount < q.length && !gQ.availableSkills[q[0]]; ++unlearnableCount) {
+				var skillId = q[0];
+				// move the skill to the end of the queue.
+				gQ.removeSkillFromQueue(skillId);
+				gQ.addSkillToQueue(skillId);
+			}
+			// iff unlearnableCount == q.length, there are no learnable skills in the queue
+			if(unlearnableCount < q.length) {
 			var skillId = q[0];
 			submitSkill(skillId, function(e) {	// handle submit skill sucess/failure
 				if (e.ok) {	// submitted successfully
