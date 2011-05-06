@@ -428,6 +428,7 @@ function pollJob() {
 				break;
 			}
 		}
+
 		if (currentSkillExpires < time()) {	//  nothing is being learnt and skills are queued
 			doAvailableSkillsCache();
 			if(q.length == 0)
@@ -486,8 +487,7 @@ function pollJob() {
 					skillError.fadeIn('slow');
 				}
 			});	// end: submitSkill(q[0], function(e) {
-			}
-			
+		}
 		} else {
 			if (pollQTimer) { window.clearTimeout(pollQTimer); }
 			if (q.length == 0) {
