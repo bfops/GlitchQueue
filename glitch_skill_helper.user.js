@@ -363,7 +363,6 @@ function showSkillInQueue(skillId) {
  */
 function submitSkill(skillId, handler) {
 	api_call("skills.learn", { 'skill_id' : skillId }, function(e) {
-		gQ.removeSkillFromQueue(skillId);
 		if (e.ok) {
 			var skill = gQ.availableSkills[skillId];
 			skill.time_complete = skill.time_remaining + time();
@@ -438,6 +437,7 @@ function pollJob() {
 			var skillId = q[0];
 			submitSkill(skillId, function(e) {	// handle submit skill sucess/failure
 				if (e.ok) {	// submitted successfully
+					gQ.removeSkillFromQueue(skillId);
 					$('#' + skillId + '_skill_error').html('');
 					$('#' + skillId + '_skill_error').hide();
 					$('#' + skillId + '_skillRemoveLink').hide();
@@ -456,6 +456,7 @@ function pollJob() {
 					} 
 					// [TODO] handle (1) skill already learnt, (2) some unknown error
 					else if (e.error == "Skill is already learnt. [TODO]") {	// Glitch doesn't check this, allows skill to be submitted
+						gQ.removeSkillFromQueue(skillId);
 						// remove skill from queue
 						skillError.html('You have already learnt this skill.');
 					}
@@ -463,6 +464,9 @@ function pollJob() {
 						// skip or remove from queue?
 						// TODO: it's stuck
 						skillError.html('You cannot learn this skill yet.');
+						gQ.removeSkillFromQueue(skillId);
+						// learn it later
+						gQ.addSkillToQueue(skillId);
 						if (pollQTimer) { window.clearTimeout(pollQTimer); }
 						pollQTimer = window.setTimeout(pollJob, POLL_INTERVAL_DEFAULT*1000);	// try again later for unknown error
 					} else {
