@@ -383,7 +383,7 @@ function doAvailableSkillsCache(handler) {
 	//log("Cache Last: " + new Date(availableSkills_lastCache*1000));
 	if (time() < availableSkills_lastCache + CACHE_AGE) { return; } // cache is not older than 1/2 hr
 	//log("Cache is too old.");
-	api_call("skills.listAvailable", { per_page: 100 }, function (e) { 
+	api_call("skills.listAvailable", { per_page: 1024 }, function (e) { 
 		if (!e.ok) { return; }	// quit if unable to get available skills
 		if (e.skills) {
 			gQ.availableSkills = e.skills;
@@ -391,8 +391,8 @@ function doAvailableSkillsCache(handler) {
 		}
 		if (handler) { handler(e); }
 	});
-	api_call("skills.listAll", { per_page: 100 }, function (e) { 
-		if (!e.ok) { return; }	// quit if unable to get available skills
+	api_call("skills.listAll", { per_page: 1024 }, function (e) { 
+		if (!e.ok) { return; }	// quit if unable to get all skills
 		if (e.items) {
 			gQ.allSkills = e.items;
 		}
