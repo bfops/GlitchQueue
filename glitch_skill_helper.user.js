@@ -435,7 +435,7 @@ function pollJob() {
 
 			// move all unlearnable skills to the end of the queue
 			var unlearnableCount = 0;
-			for(unlearnableCount < q.length && !gQ.availableSkills[q[0]]; ++unlearnableCount) {
+			for(; unlearnableCount < q.length && !gQ.availableSkills[q[0]]; ++unlearnableCount) {
 				var skillId = q[0];
 				// move the skill to the end of the queue.
 				gQ.removeSkillFromQueue(skillId);
