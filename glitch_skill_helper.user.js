@@ -31,7 +31,6 @@
 var POLL_INTERVAL_DEFAULT = 1;
 var POLL_INTERVAL_DISABLED = 15*60; // poll interval when game is disabled
 var POLL_INTERVAL_ERROR = 60;	// poll interval when unknown error is encountered, maybe 500 errs
-var CACHE_AGE = 30*60;	// age of availble skills cache to keep before refresh
 
 // **************************************************************************
 // ------------------------ DO NOT EDIT FROM HERE ON ------------------------
@@ -381,7 +380,6 @@ function submitSkill(skillId, handler) {
 var availableSkills_lastCache = 0;
 function doAvailableSkillsCache(handler) {
 	//log("Cache Last: " + new Date(availableSkills_lastCache*1000));
-	if (time() < availableSkills_lastCache + CACHE_AGE) { return; } // cache is not older than 1/2 hr
 	//log("Cache is too old.");
 	api_call("skills.listAvailable", { per_page: 1024 }, function (e) { 
 		if (!e.ok) { return; }	// quit if unable to get available skills
