@@ -424,81 +424,69 @@ function pollJob() {
 				currentSkillExpires = skill.time_complete - skill.skew;
 				if (pollQTimer) { window.clearTimeout(pollQTimer); }
 				pollQTimer = window.setTimeout(pollJob, remaining*1000);
-				break;
+				return;
 			}
 		}
 
-		if (currentSkillExpires <= time()) {	//  nothing is being learnt and skills are queued
-			doAvailableSkillsCache();
-			if(q.length == 0)
-				return;
+		// We've finished learning a skill.
+		doAvailableSkillsCache();
+		if(q.length == 0)
+			return;
 
-			// move all unlearnable skills to the end of the queue
-			var unlearnableCount = 0;
-			for(; unlearnableCount < q.length && !gQ.availableSkills[q[0]]; ++unlearnableCount) {
-				var skillId = q[0];
-				// move the skill to the end of the queue.
-				gQ.removeSkillFromQueue(skillId);
-				gQ.addSkillToQueue(skillId);
-			}
-			// iff unlearnableCount == q.length, there are no learnable skills in the queue
-			if(unlearnableCount < q.length) {
-				var skillId = q[0];
-				submitSkill(skillId, function(e) {	// handle submit skill sucess/failure
-					if (e.ok) {	// submitted successfully
-						gQ.removeSkillFromQueue(skillId);
-						$('#' + skillId + '_skill_error').html('');
-						$('#' + skillId + '_skill_error').hide();
-						$('#' + skillId + '_skillRemoveLink').hide();
-						currentSkillExpires = gQ.availableSkills[skillId].time_remaining + time();
-						log("Poll job scheduled for " + (gQ.availableSkills[skillId].time_remaining + 3) + " secs later.");
+		// move all unlearnable skills to the end of the queue
+		var unlearnableCount = 0;
+		for(; unlearnableCount < q.length && !gQ.availableSkills[q[0]]; ++unlearnableCount) {
+			var skillId = q[0];
+			// move the skill to the end of the queue.
+			gQ.removeSkillFromQueue(skillId);
+			gQ.addSkillToQueue(skillId);
+		}
+		// iff unlearnableCount == q.length, there are no learnable skills in the queue
+		if(unlearnableCount < q.length) {
+			var skillId = q[0];
+			submitSkill(skillId, function(e) {	// handle submit skill sucess/failure
+				if (e.ok) {	// submitted successfully
+					gQ.removeSkillFromQueue(skillId);
+					$('#' + skillId + '_skill_error').html('');
+					$('#' + skillId + '_skill_error').hide();
+					$('#' + skillId + '_skillRemoveLink').hide();
+					currentSkillExpires = gQ.availableSkills[skillId].time_remaining + time();
+					log("Poll job scheduled for " + (gQ.availableSkills[skillId].time_remaining + 3) + " secs later.");
+					if (pollQTimer) { window.clearTimeout(pollQTimer); }
+					pollQTimer = window.setTimeout(pollJob, (gQ.availableSkills[skillId].time_remaining + 5)*1000);	// Buffer 5 secs to next poll job
+				} else {
+					currentSkillExpires = 0;
+					var skillError = $('#' + skillId + '_skill_error');
+					if (e.error == "The game is disabled.") { // Argh game is disabled
+						log("Game is disabled. Poll job scheduled for " + POLL_INTERVAL_DISABLED + " secs / " + (POLL_INTERVAL_DISABLED/60).toFixed(2) + " mins later.");
+						skillError.html('Game is disabled.');
 						if (pollQTimer) { window.clearTimeout(pollQTimer); }
-						pollQTimer = window.setTimeout(pollJob, (gQ.availableSkills[skillId].time_remaining + 5)*1000);	// Buffer 5 secs to next poll job
-					} else {
-						currentSkillExpires = 0;
-						var skillError = $('#' + skillId + '_skill_error');
-						if (e.error == "The game is disabled.") { // Argh game is disabled
-							log("Game is disabled. Poll job scheduled for " + POLL_INTERVAL_DISABLED + " secs / " + (POLL_INTERVAL_DISABLED/60).toFixed(2) + " mins later.");
-							skillError.html('Game is disabled.');
-							if (pollQTimer) { window.clearTimeout(pollQTimer); }
-							pollQTimer = window.setTimeout(pollJob, POLL_INTERVAL_DISABLED*1000);	// try again 15 mins later
-						} 
-						// [TODO] handle (1) skill already learnt, (2) some unknown error
-						else if (e.error == "Skill is already learnt. [TODO]") {	// Glitch doesn't check this, allows skill to be submitted
-							gQ.removeSkillFromQueue(skillId);
-							// remove skill from queue
-							skillError.html('You have already learnt this skill.');
-						}
-						else if (e.error == "Doesn't meet requirements") {
-							// skip or remove from queue?
-							// TODO: it's stuck
-							skillError.html('You cannot learn this skill yet.');
-							gQ.removeSkillFromQueue(skillId);
-							// learn it later
-							gQ.addSkillToQueue(skillId);
-							if (pollQTimer) { window.clearTimeout(pollQTimer); }
-							pollQTimer = window.setTimeout(pollJob, POLL_INTERVAL_DEFAULT*1000);	// try again later for unknown error
-						} else {
-							skillError.html('Error: ' + e.error);
-							if (pollQTimer) { window.clearTimeout(pollQTimer); }
-							pollQTimer = window.setTimeout(pollJob, POLL_INTERVAL_ERROR*1000);	// try again later for unknown error
-						}
-						skillError.fadeIn('slow');
+						pollQTimer = window.setTimeout(pollJob, POLL_INTERVAL_DISABLED*1000);	// try again 15 mins later
+					} 
+					// [TODO] handle (1) skill already learnt, (2) some unknown error
+					else if (e.error == "Skill is already learnt. [TODO]") {	// Glitch doesn't check this, allows skill to be submitted
+						gQ.removeSkillFromQueue(skillId);
+						// remove skill from queue
+						skillError.html('You have already learnt this skill.');
 					}
-				});	// end: submitSkill(q[0], function(e) {
-			}	
-		} else {
-			if (pollQTimer) { window.clearTimeout(pollQTimer); }
-			if (q.length == 0) {
-				log("Queue is empty.");
-				pollQTimer = window.setTimeout(pollJob, POLL_INTERVAL_DEFAULT*1000); // check again in 1 sec
-			} else {
-				// Check later
-				log("Rescheduling poll job for " + (currentSkillExpires - time()) + " secs later.");
-				pollQTimer = window.setTimeout(pollJob, (currentSkillExpires - time()) * 1000); // check again when skill is completed
-			}
-		} // end: if (currentSkillExpires < time() && q.length > 0)
-		
+					else if (e.error == "Doesn't meet requirements") {
+						// skip or remove from queue?
+						// TODO: it's stuck
+						skillError.html('You cannot learn this skill yet.');
+						gQ.removeSkillFromQueue(skillId);
+						// learn it later
+						gQ.addSkillToQueue(skillId);
+						if (pollQTimer) { window.clearTimeout(pollQTimer); }
+						pollQTimer = window.setTimeout(pollJob, POLL_INTERVAL_DEFAULT*1000);	// try again later for unknown error
+					} else {
+						skillError.html('Error: ' + e.error);
+						if (pollQTimer) { window.clearTimeout(pollQTimer); }
+						pollQTimer = window.setTimeout(pollJob, POLL_INTERVAL_ERROR*1000);	// try again later for unknown error
+					}
+					skillError.fadeIn('slow');
+				}
+			});	// end: submitSkill(q[0], function(e) {
+		}	
 	});	// end: api_call("skills.listLearning", {}, function(e) {
 	
 } // end: pollJob()
