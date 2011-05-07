@@ -406,7 +406,6 @@ var currentSkillExpires = 0;	// Completetion datetime (secs since epoch) of the 
 function pollJob() {
 	log("pollJob started.");
 	
-	doAvailableSkillsCache();
 	var q = gQ.getQueue();
 	
 	if (currentSkillExpires > time() || q.length == 0) { 
