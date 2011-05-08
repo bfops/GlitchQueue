@@ -51,6 +51,12 @@ if (!(typeof unsafeWindow === 'undefined')) {
 var uiQTimer = 0;
 var pollQTimer = 0;
 
+// [time] is in seconds.
+function renewPollTimer(time) {
+	if (pollQTimer) window.clearTimeout(pollQTimer);
+	pollQTimer = window.setTimeout(pollJob, time * 1000);
+}
+
 /**
  * Logger function
  */
@@ -199,11 +205,9 @@ $(document).ready(function() {
 		displayQueuedItems();
 	});
 
-
-	// Delay first poll by 2 secs to avoid refreshing cache twice
-	if (pollQTimer) window.clearTimeout(pollQTimer);
-	pollQTimer = window.setTimeout(pollJob, 2*1000);
-
+	// Delay to avoid refreshing cache twice
+	renewPollTimer(2);
+	
 });	// end: $(document).ready
 // ----------------------------------------------------------------------------------------
 
@@ -382,8 +386,7 @@ function pollJob() {
 	var q = gQ.getQueue();
 
 	if (currentSkillExpires > time() || q.length == 0) {
-		if (pollQTimer) window.clearTimeout(pollQTimer);
-		pollQTimer = window.setTimeout(pollJob, POLL_INTERVAL_DEFAULT*1000);
+		renewPollTimer(POLL_INTERVAL_DEFAULT);
 		return;
 	}	// last skill learnt has not finished
 
@@ -393,10 +396,9 @@ function pollJob() {
 			for (skillId in e.learning) {
 				var skill = e.learning[skillId];
 				skill.skew = skill.time_complete - skill.time_remaining - time();	// to fix user's system clock skew off server time
-				var remaining = skill.time_complete - time() - skill.skew;
 				currentSkillExpires = skill.time_complete - skill.skew;
-				if (pollQTimer) window.clearTimeout(pollQTimer);
-				pollQTimer = window.setTimeout(pollJob, remaining*1000);
+				// Poll once the skill is done.
+				renewPollTimer(skill.time_complete - time() - skill.skew);	
 				return;
 			}
 		}
@@ -424,17 +426,14 @@ function pollJob() {
 					$('#' + skillId + '_skill_error').hide();
 					$('#' + skillId + '_skillRemoveLink').hide();
 					currentSkillExpires = gQ.availableSkills[skillId].time_remaining + time();
-					log("Poll job scheduled for " + (gQ.availableSkills[skillId].time_remaining + 3) + " secs later.");
-					if (pollQTimer) { window.clearTimeout(pollQTimer); }
-					pollQTimer = window.setTimeout(pollJob, (gQ.availableSkills[skillId].time_remaining + 5)*1000);	// Buffer 5 secs to next poll job
+					renewPollTimer(gQ.availableSkills[skillId].time_remaining);
 				} else {
 					currentSkillExpires = 0;
 					var skillError = $('#' + skillId + '_skill_error');
 					if (e.error == "The game is disabled.") { // Argh game is disabled
-						log("Game is disabled. Poll job scheduled for " + POLL_INTERVAL_DISABLED + " secs / " + (POLL_INTERVAL_DISABLED/60).toFixed(2) + " mins later.");
+						log("Game is disabled. Checking again in " + (POLL_INTERVAL_DISABLED / 60).toFixed(2) + " minutes.");
 						skillError.html('Game is disabled.');
-						if (pollQTimer) window.clearTimeout(pollQTimer);
-						pollQTimer = window.setTimeout(pollJob, POLL_INTERVAL_DISABLED*1000);	// try again 15 mins later
+						renewPollTimer(POLL_INTERVAL_DISABLED);	// try again later
 					}
 					// [TODO] handle (1) skill already learnt, (2) some unknown error
 					else if (e.error == "Skill is already learnt.") {	// Glitch doesn't check this, allows skill to be submitted
@@ -443,18 +442,14 @@ function pollJob() {
 						skillError.html('You have already learnt this skill.');
 					}
 					else if (e.error == "Doesn't meet requirements") {
-						// skip or remove from queue?
-						// TODO: it's stuck
 						skillError.html('You cannot learn this skill yet.');
 						gQ.removeSkillFromQueue(skillId);
 						// learn it later
 						gQ.addSkillToQueue(skillId);
-						if (pollQTimer) window.clearTimeout(pollQTimer);
-						pollQTimer = window.setTimeout(pollJob, POLL_INTERVAL_DEFAULT*1000);	// try again later for unknown error
+						renewPollTimer(POLL_INTERVAL_DEFAULT);	// try again later for unknown error
 					} else {
 						skillError.html('Error: ' + e.error);
-						if (pollQTimer) window.clearTimeout(pollQTimer);
-						pollQTimer = window.setTimeout(pollJob, POLL_INTERVAL_ERROR*1000);	// try again later for unknown error
+						renewPollTimer(POLL_INTERVAL_ERROR);	// try again later for unknown error
 					}
 					skillError.fadeIn('slow');
 				}
