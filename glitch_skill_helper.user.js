@@ -23,7 +23,6 @@
 0.1.7 (2011.04.19)
 	- Helloooo beta!
 */
-(function() {
 
 // -------- start --------
 /*
@@ -70,7 +69,7 @@ function log(msg) {
 	var now = new Date();
 	if (!$.isPlainObject(msg))
 		msg = now.getHours() + ":" + now.getMinutes() + "." + now.getSeconds() + (now.getHours() > 11 ? "PM" : "AM") + " - " + msg;
-	if (window.console) { window.console.log(msg); }
+	if (window.console) window.console.log(msg);
 }
 
 log("Ding! Script started.");
@@ -135,7 +134,6 @@ function GlitchQueue(playerTSID, localDb) {
 // ===========================================================================
 
 // Skill Queue styling
-}
 
 // Set tool tip for skill currently being learnt
 function setTooltipForCurrentLearning() {
@@ -306,7 +304,7 @@ function skillQRemoveLink_onClick(skillId) {
 			$('#' + skillId + '_skillqueue_item').remove();
 		});
 		var q = gQ.getQueue();
-		if (q.length == 0) { pollJob(); }
+		if (q.length == 0) pollJob();
 	});
 }
 
@@ -471,5 +469,4 @@ function pollJob() {
 } // end: pollJob()
 
 // -------- end --------
-})();
 
