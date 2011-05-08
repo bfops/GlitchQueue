@@ -1,6 +1,5 @@
 // ==UserScript==
 // @name           Glitch Skill Helper
-// @namespace      http://alpha.glitch.com/profiles/PIF6RN35T3D1DT2/
 // @version        0.1.7
 // @include        http://alpha.glitch.com
 // @include        http://beta.glitch.com
@@ -8,26 +7,11 @@
 // @include        http://beta.glitch.com/
 // @include        http://alpha.glitch.com/#
 // @include        http://beta.glitch.com/#
-// @description	   Helps you queue skills for learning in Glitch. $LastChangedDate: 2011-04-19 11:15:59 +0800 (Tue, 19 Apr 2011) $ $Rev: 142 $
+// @description	   Manages skill-queuing for learning in Glitch.
 // ==/UserScript==
 
 // ping's Skill Queuer for Glitch, modified by RobotGymnast to allow queuing of all skills.
 
-/* Changelog:
-0.1.0 (2010.12.18)
-	- Ready for limited pre-alpha release.
-0.1.3 (2010.12.22)
-	- Fix excessive polling when skill is being learnt
-0.1.6 (2011.01.15)
-	- Fix bug with invalid skill in queue
-0.1.7 (2011.04.19)
-	- Helloooo beta!
-*/
-
-// -------- start --------
-/*
-	CONFIGURABLE OPTIONS
-*/
 // All intervals/ages in seconds
 var POLL_INTERVAL_DEFAULT = 1;
 var POLL_INTERVAL_DISABLED = 15*60; // poll interval when game is disabled
