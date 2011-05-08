@@ -12,13 +12,13 @@
 
 // ping's Skill Queuer for Glitch, modified by RobotGymnast to allow queuing of all skills.
 
-// All intervals/ages in seconds
 var POLL_INTERVAL_DEFAULT = 1;
 var POLL_INTERVAL_DISABLED = 15*60; // poll interval when game is disabled
 var POLL_INTERVAL_ERROR = 60;	// poll interval when unknown error is encountered, maybe 500 errs
 
 // **************************************************************************
 // ------------------------ DO NOT EDIT FROM HERE ON ------------------------
+// **************************************************************************
 
 // Returns [b] \ [a] (i.e. all elements in [b] which are not in [a]).
 function relativeComplement(a, b) {
@@ -30,11 +30,6 @@ function relativeComplement(a, b) {
 
 	return ret;
 }
-
-/**
- * Version information
- */
-var VERSION = "0.1.7"
 
 /**
  * unsafeWindow variables / functions
@@ -89,7 +84,7 @@ function GlitchQueue(playerTSID, localDb) {
 	};
 
 	// get/set queue array from/to body
-	this.getQueue = function () { return $('body').data("glitchq"); };
+	this.getQueue = function() { return $('body').data("glitchq"); };
 	this.setQueue = function(q) { $('body').data("glitchq", q); };
 
 	// persist queue array to storage
@@ -111,7 +106,7 @@ function GlitchQueue(playerTSID, localDb) {
 	};
 
 	// removes skill from queue
-	this.removeSkillFromQueue = function (skillId, handler) {
+	this.removeSkillFromQueue = function(skillId, handler) {
 		var q = this.getQueue();
 		var idx = q.indexOf(skillId);
 		if (idx > -1)
@@ -156,7 +151,7 @@ $(document).ready(function() {
 	if (!playerTSID) return;
 
 	gQ = new GlitchQueue(playerTSID);
-	doUnlearnedSkills(function (e) {
+	doUnlearnedSkills(function(e) {
 		gQ.unlearnedSkills = e;
 	});
 
@@ -346,7 +341,7 @@ function submitSkill(skillId, handler) {
 			skill.skew = 0;
 			gQ.skillLearning[skillId] = skill;
 			if (uiQTimer) { window.clearTimeout(uiQTimer); }
-			uiQTimer = window.setTimeout(function () { updateSkillQueueProgress(skillId); }, 1000);
+			uiQTimer = window.setTimeout(function() { updateSkillQueueProgress(skillId); }, 1000);
 		}
 		if (handler) { handler(e); }
 	});
@@ -357,7 +352,7 @@ function submitSkill(skillId, handler) {
  */
 var availableSkills_lastCache = 0;
 function doAvailableSkillsCache(handler) {
-	api_call("skills.listAvailable", { per_page: 1024 }, function (e) {
+	api_call("skills.listAvailable", { per_page: 1024 }, function(e) {
 		if (!e.ok) return;	// quit if unable to get available skills
 		if (e.skills) {
 			gQ.availableSkills = e.skills;
@@ -368,9 +363,9 @@ function doAvailableSkillsCache(handler) {
 }
 
 function doUnlearnedSkills(handler) {
-	api_call("skills.listAll", { per_page: 1024 }, function (e) {
+	api_call("skills.listAll", { per_page: 1024 }, function(e) {
 		if(e.ok && e.items)
-			api_call("skills.listLearned", {}, function (learned) {
+			api_call("skills.listLearned", {}, function(learned) {
 				if(learned.ok && learned.skills)
 					handler(relativeComplement(learned.skills, e.items));
 			});
