@@ -41,11 +41,6 @@ var POLL_INTERVAL_ERROR = 60;	// poll interval when unknown error is encountered
  * Version information
  */
 var VERSION = "0.1.7"
-function about() { alert ("Version: " + VERSION
-	+ "\n" + " $Rev: 142 $ "
-	+ "\n" + " $Date: 2011-04-19 11:15:59 +0800 (Tue, 19 Apr 2011) $ "); }
-if (!(typeof GM_registerMenuCommand === 'undefined'))
-	GM_registerMenuCommand("Glitch Skill Helper - About", about);
 
 /**
  * unsafeWindow variables / functions
@@ -76,7 +71,6 @@ function log(msg) {
 	if (!$.isPlainObject(msg))
 		msg = now.getHours() + ":" + now.getMinutes() + "." + now.getSeconds() + (now.getHours() > 11 ? "PM" : "AM") + " - " + msg;
 	if (window.console) { window.console.log(msg); }
-	if (!(typeof GM_log === 'undefined')) { GM_log(msg); }
 }
 
 log("Ding! Script started.");
@@ -141,10 +135,6 @@ function GlitchQueue(playerTSID, localDb) {
 // ===========================================================================
 
 // Skill Queue styling
-if (!(typeof GM_addStyle === 'undefined')) {
-	GM_addStyle('#skillQueue { border-top: 1px solid #C8E1DE; margin-top:10px; margin-bottom: 40px; }');
-	GM_addStyle('.skillQueueItem { margin-top:10px; }');
-	GM_addStyle('.skillError { border-left: 3px solid #DD8888; color: #DD8888; font-size: 11px; font-style: italic; margin-left: 2px; margin-bottom: 2px; padding: 0 3px 0 3px; display: none; }');
 }
 
 // Set tool tip for skill currently being learnt
@@ -223,6 +213,7 @@ $(document).ready(function() {
 		}
 		displayQueuedItems();
 	});
+
 
 	// Delay first poll by 2 secs to avoid refreshing cache twice
 	if (pollQTimer) window.clearTimeout(pollQTimer);
