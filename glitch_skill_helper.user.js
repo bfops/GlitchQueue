@@ -11,7 +11,7 @@
 // @description	   Helps you queue skills for learning in Glitch. $LastChangedDate: 2011-04-19 11:15:59 +0800 (Tue, 19 Apr 2011) $ $Rev: 142 $
 // ==/UserScript==
 
-// Ping's Skill Queuer for Glitch, modified by RobotGymnast to allow queuing of all skills.
+// ping's Skill Queuer for Glitch, modified by RobotGymnast to allow queuing of all skills.
 
 /* Changelog:
 0.1.0 (2010.12.18)
@@ -364,8 +364,6 @@ function submitSkill(skillId, handler) {
  */
 var availableSkills_lastCache = 0;
 function doAvailableSkillsCache(handler) {
-	//log("Cache Last: " + new Date(availableSkills_lastCache*1000));
-	//log("Cache is too old.");
 	api_call("skills.listAvailable", { per_page: 1024 }, function (e) {
 		if (!e.ok) return;	// quit if unable to get available skills
 		if (e.skills) {
