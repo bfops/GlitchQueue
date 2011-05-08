@@ -36,6 +36,17 @@ var POLL_INTERVAL_ERROR = 60;	// poll interval when unknown error is encountered
 // **************************************************************************
 // ------------------------ DO NOT EDIT FROM HERE ON ------------------------
 
+// Returns [b] \ [a] (i.e. all elements in [b] which are not in [a]).
+function relativeComplement(a, b) {
+	var ret = {};
+
+	for (x in b)
+		if (typeof a[x] === "undefined")
+			ret[x] = b[x];
+
+	return ret;
+}
+
 /**
  * Version information
  */
@@ -82,7 +93,7 @@ function GlitchQueue(playerTSID, localDb) {
 	this.Q_VALUE_KEY = "glitch_SkillQueue_" + playerTSID;	// storage key name
 	this.skillLearning = {};
 	this.availableSkills = {};
-	this.allSkills = {};
+	this.unlearnedSkills = {};
 	this.playerTSID = playerTSID;
 	this.db = localDb;
 
@@ -161,11 +172,8 @@ $(document).ready(function() {
 	if (!playerTSID) return;
 
 	gQ = new GlitchQueue(playerTSID);
-
-	api_call("skills.listAll", { per_page: 1024 }, function (e) {
-		if (!e.ok) return;	// quit if unable to get all skills
-		if (e.items)
-			gQ.allSkills = e.items;
+	doUnlearnedSkills(function (e) {
+		gQ.unlearnedSkills = e;
 	});
 
 	$('body').data("glitchq", gQ.getSavedQueue());
@@ -185,8 +193,8 @@ $(document).ready(function() {
 			gQ.availableSkills = e.skills;
 			availableSkills_lastCache = time();
 			var skillQueueSelect = $('<select style="margin-right: 10px; margin: left: 10px;" id="skillQueueSelect"><option value="">Choose!</option></select>');
-			for (skillId in gQ.allSkills) {
-				skill = gQ.allSkills[skillId];
+			for (skillId in gQ.unlearnedSkills) {
+				skill = gQ.unlearnedSkills[skillId];
 				skillQueueSelect.append($('<option style="border-top: dotted 1px #ccc;" value="' + skillId + '">' + skill.name + '</option>'));
 			}
 			var skillQueueDialogueCont = $('<div class="dialog" id="skillQueueDialogueCont"></div>');
@@ -272,8 +280,9 @@ function displayQueuedItems() {
 function showAddQDialogue() {
 	var skillQueueSelect = $('#skillQueueSelect');
 	skillQueueSelect.html("<option value=''>Choose!</option>");
-	for (skillId in gQ.allSkills) {
-		skill = gQ.allSkills[skillId];
+	for (skillId in gQ.unlearnedSkills) {
+		log(skillId);
+		skill = gQ.unlearnedSkills[skillId];
 		skillQueueSelect.append($('<option style="border-top: dotted 1px #ccc;" value="' + skillId + '">' + skill.name + '</option>'));
 	}
 	$("#skillQueueDialogueCont").show();
@@ -317,7 +326,7 @@ function showSkillInQueue(skillId) {
 		skill = gQ.availableSkills[skillId];
 		remaining = skill.time_remaining;
 	} else {
-		skill = gQ.allSkills[skillId];
+		skill = gQ.unlearnedSkills[skillId];
 		remaining = skill.total_time;
 	}
 	var percentCompleted = (100 - (remaining / skill.total_time * 100));
@@ -371,6 +380,16 @@ function doAvailableSkillsCache(handler) {
 			availableSkills_lastCache = time();
 		}
 		if (handler) handler(e);
+	});
+}
+
+function doUnlearnedSkills(handler) {
+	api_call("skills.listAll", { per_page: 1024 }, function (e) {
+		if(e.ok && e.items)
+			api_call("skills.listLearned", {}, function (learned) {
+				if(learned.ok && learned.skills)
+					handler(relativeComplement(learned.skills, e.items));
+			});
 	});
 }
 
