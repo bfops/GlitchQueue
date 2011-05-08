@@ -147,7 +147,6 @@ var playerTSID;	// player Tiny Speck ID
 
 // ----------------------------------------------------------------------------------------
 $(document).ready(function() {
-
 	if (!window.localStorage) {
 		log('localStorage is not supported in this browser.');
 		return;
@@ -242,8 +241,6 @@ function updateSkillQueueProgress(skillId) {
 			uiQTimer = 0;
 			$('#' + skillId + '_skill_indicator').width($('#' + skillId + '_skill_progress').innerWidth());
 		}
-	} else {
-		log("No such skill (" + skill + ") in queue.");
 	}
 }
 
@@ -264,7 +261,6 @@ function showAddQDialogue() {
 	var skillQueueSelect = $('#skillQueueSelect');
 	skillQueueSelect.html("<option value=''>Choose!</option>");
 	for (skillId in gQ.unlearnedSkills) {
-		log(skillId);
 		skill = gQ.unlearnedSkills[skillId];
 		skillQueueSelect.append($('<option style="border-top: dotted 1px #ccc;" value="' + skillId + '">' + skill.name + '</option>'));
 	}
