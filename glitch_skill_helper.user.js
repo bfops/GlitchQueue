@@ -435,16 +435,10 @@ function pollJob() {
 						skillError.html('Game is disabled.');
 						renewPollTimer(POLL_INTERVAL_DISABLED);	// try again later
 					}
-					// [TODO] handle (1) skill already learnt, (2) some unknown error
-					else if (e.error == "Skill is already learnt.") {	// Glitch doesn't check this, allows skill to be submitted
-						gQ.removeSkillFromQueue(skillId);
-						// remove skill from queue
-						skillError.html('You have already learnt this skill.');
-					}
 					else if (e.error == "Doesn't meet requirements") {
 						skillError.html('You cannot learn this skill yet.');
+						// Put the skill at the end of the queue.
 						gQ.removeSkillFromQueue(skillId);
-						// learn it later
 						gQ.addSkillToQueue(skillId);
 						renewPollTimer(POLL_INTERVAL_DEFAULT);	// try again later for unknown error
 					} else {
