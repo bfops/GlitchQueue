@@ -135,8 +135,7 @@ if (!(typeof GM_addStyle === 'undefined')) {
 // Set tool tip for skill currently being learnt
 function setTooltipForCurrentLearning() {
 	if (typeof queue === 'undefined') return;
-	var remaining = queue.end - time() - queue.skew;
-	var completeDate = new Date((time() + remaining)*1000);
+	var completeDate = new Date(currentSkillExpires * 1000);
 
 	$('.progress').attr('title', 'Finishing at '
 		+ completeDate.getHours() + ':' + completeDate.getMinutes() + (completeDate.getHours() < 12 ? 'am' : 'pm')
@@ -204,7 +203,7 @@ $(document).ready(function() {
 function updateSkillQueueProgress(skillId) {
 	if (gQ.skillLearning[skillId]) {
 		var skill = gQ.skillLearning[skillId];
-		var remaining = skill.time_complete - time() - skill.skew;
+		var remaining = currentSkillExpires - time();
 		var percentCompleted = (100 - (remaining / skill.total_time * 100));
 		$('#' + skillId + '_skill_indicator').show();
 
@@ -321,10 +320,7 @@ function showSkillInQueue(skillId) {
 function submitSkill(skillId, handler) {
 	api_call("skills.learn", { 'skill_id' : skillId }, function(e) {
 		if (e.ok) {
-			var skill = gQ.availableSkills[skillId];
-			skill.time_complete = skill.time_remaining + time();
-			skill.skew = 0;
-			gQ.skillLearning[skillId] = skill;
+			gQ.skillLearning[skillId] = gQ.availableSkills[skillId];
 			if (uiQTimer) window.clearTimeout(uiQTimer);
 			uiQTimer = window.setTimeout(function() { updateSkillQueueProgress(skillId); }, 1000);
 		}
@@ -425,11 +421,10 @@ function pollJob() {
 		// Another skill was selected externally.
 		if (e.learning) {
 			for (skillId in e.learning) {
-				var skill = e.learning[skillId];
-				skill.skew = skill.time_complete - skill.time_remaining - time();	// to fix user's system clock skew off server time
-				currentSkillExpires = skill.time_complete - skill.skew;
+				var remaining = e.learning[skillId].time_remaining;
+				currentSkillExpires = time() + remaining;
 				// Poll once the skill is done.
-				renewPollTimer(skill.time_complete - time() - skill.skew);	
+				renewPollTimer(remaining);	
 				return;
 			}
 		}
