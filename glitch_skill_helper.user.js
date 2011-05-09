@@ -10,7 +10,7 @@
 // ==/UserScript==
 
 var POLL_INTERVAL_DEFAULT = 1;
-var POLL_INTERVAL_DISABLED = 15*60; // poll interval when game is disabled
+var POLL_INTERVAL_DISABLED = 5 * 60; // poll interval when game is disabled
 var POLL_INTERVAL_ERROR = 60;	// poll interval when unknown error is encountered, maybe 500 errs
 
 // **************************************************************************
@@ -193,7 +193,7 @@ $(document).ready(function() {
 	setUpGUI();
 
 	// Delay to avoid refreshing cache twice
-	renewPollTimer(2);
+	renewPollTimer(0);
 	
 });	// end: $(document).ready
 // ----------------------------------------------------------------------------------------
