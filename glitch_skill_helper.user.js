@@ -208,20 +208,17 @@ function updateSkillQueueProgress(skillId) {
 		$('#' + skillId + '_skill_indicator').show();
 
 		if (remaining > 0) {
-			if (remaining <= 5)
-				$('#' + skillId + '_skill_remaining').html('OMG OMG OMG OMG ' + format_sec(remaining) + '');
-			else if (remaining <= 10)
-				$('#' + skillId + '_skill_remaining').html('Almost there! ' + format_sec(remaining) + '');
-			else if (remaining <= 15)
-				$('#' + skillId + '_skill_remaining').html('You can do it! ' + format_sec(remaining) + '');
-			else if (remaining <= 20)
-				$('#' + skillId + '_skill_remaining').html('Oh, so close... ' + format_sec(remaining) + '');
-			else
-				$('#' + skillId + '_skill_remaining').html(format_sec(remaining) + '');
-
+			var prefix = "";
+			if (remaining <= 5) prefix = 'OMG OMG OMG OMG ';
+			else if (remaining <= 10) prefix = 'Almost there! ';
+			else if (remaining <= 15) prefix = 'You can do it! ';
+			else if (remaining <= 20) prefix = 'Oh, so close... ';
+			
+			$('#' + skillId + '_skill_remaining').html(prefix + format_sec(remaining));
 			$('#' + skillId + '_skill_indicator').width((100 - (remaining / skill.total_time * 100)) + '%');
+
 			if (uiQTimer) window.clearTimeout(uiQTimer);
-			uiQTimer = window.setTimeout( function() { updateSkillQueueProgress(skillId) }, 1000);	// update every 1 second
+			uiQTimer = window.setTimeout(function() { updateSkillQueueProgress(skillId) }, 1000);	// update every 1 second
 		} else {
 			$('#' + skillId + '_skill_remaining').html('Done!');
 			window.clearTimeout(uiQTimer);	// clear the update
@@ -347,11 +344,11 @@ function doAvailableSkillsCache(handler) {
 }
 
 function doUnlearnedSkillsCache(handler) {
-	api_call("skills.listAll", { per_page: 1024 }, function(e) {
-		if(e.ok && e.items)
+	api_call("skills.listAll", { per_page: 1024 }, function(all) {
+		if(all.ok && all.items)
 			api_call("skills.listLearned", {}, function(learned) {
 				if(learned.ok && learned.skills) {
-					gQ.unlearnedSkills = relativeComplement(learned.skills, e.items);
+					gQ.unlearnedSkills = relativeComplement(learned.skills, all.items);
 					if(handler) handler(gQ.unlearnedSkills);
 				}
 			});
@@ -367,13 +364,62 @@ function pollJob() {
 
 	var q = gQ.getQueue();
 
+	// Rotates the queue until a learnable skill is reached. Returns true iff there is a learnable skill in the queue.
+	function rotateQueueToLearnableSkill() {
+		// move all unlearnable skills to the end of the queue
+		var unlearnableCount = 0;
+		for(; unlearnableCount < q.length && !gQ.availableSkills[q[0]]; ++unlearnableCount) {
+			var skillId = q[0];
+			// move the skill to the end of the queue.
+			gQ.removeSkillFromQueue(skillId);
+			gQ.addSkillToQueue(skillId);
+		}
+
+		return (unlearnableCount < q.length);
+	}
+
+	function trySkillSubmit(skillId) {
+		submitSkill(skillId, function(e) {	// handle submit skill sucess/failure
+			if (e.ok) {	// submitted successfully
+				gQ.removeSkillFromQueue(skillId);
+				$('#' + skillId + '_skill_error').html('');
+				$('#' + skillId + '_skill_error').hide();
+				$('#' + skillId + '_skillRemoveLink').hide();
+				currentSkillExpires = available[skillId].time_remaining + time();
+				renewPollTimer(available[skillId].time_remaining);
+			} else {
+				currentSkillExpires = 0;
+				var skillError = $('#' + skillId + '_skill_error');
+				if (e.error == "The game is disabled.") { // Argh game is disabled
+					log("Game is disabled. Checking again in " + (POLL_INTERVAL_DISABLED / 60).toFixed(2) + " minutes.");
+					skillError.html('Game is disabled.');
+					renewPollTimer(POLL_INTERVAL_DISABLED);	// try again later
+				}
+				else if (e.error == "Doesn't meet requirements") {
+					skillError.html('You cannot learn this skill yet.');
+					// Put the skill at the end of the queue.
+					gQ.removeSkillFromQueue(skillId);
+					gQ.addSkillToQueue(skillId);
+					renewPollTimer(POLL_INTERVAL_DEFAULT);	// try again later for unknown error
+				} else {
+					skillError.html('Error: ' + e.error);
+					renewPollTimer(POLL_INTERVAL_ERROR);	// try again later for unknown error
+				}
+				skillError.fadeIn('slow');
+			}
+		});	// end: submitSkill(q[0], function(e) {
+	}
+
+	// We're still learning a skill.
 	if (currentSkillExpires > time() || q.length == 0) {
 		renewPollTimer(POLL_INTERVAL_DEFAULT);
 		return;
-	}	// last skill learnt has not finished
+	}
 
 	api_call("skills.listLearning", {}, function(e) {
 		if (!e.ok) { log("Oops, poll broke while trying to check learning. " + e.error); return; }
+
+		// Another skill was selected externally.
 		if (e.learning) {
 			for (skillId in e.learning) {
 				var skill = e.learning[skillId];
@@ -385,52 +431,10 @@ function pollJob() {
 			}
 		}
 
-		// We've finished learning a skill.
-		doAvailableSkillsCache(function (available) {
-			if(q.length == 0)
-				return;
-	
-			// move all unlearnable skills to the end of the queue
-			var unlearnableCount = 0;
-			for(; unlearnableCount < q.length && !available[q[0]]; ++unlearnableCount) {
-				var skillId = q[0];
-				// move the skill to the end of the queue.
-				gQ.removeSkillFromQueue(skillId);
-				gQ.addSkillToQueue(skillId);
-			}
-			// iff unlearnableCount == q.length, there are no learnable skills in the queue
-			if(unlearnableCount < q.length) {
-				var skillId = q[0];
-				submitSkill(skillId, function(e) {	// handle submit skill sucess/failure
-					if (e.ok) {	// submitted successfully
-						gQ.removeSkillFromQueue(skillId);
-						$('#' + skillId + '_skill_error').html('');
-						$('#' + skillId + '_skill_error').hide();
-						$('#' + skillId + '_skillRemoveLink').hide();
-						currentSkillExpires = available[skillId].time_remaining + time();
-						renewPollTimer(available[skillId].time_remaining);
-					} else {
-						currentSkillExpires = 0;
-						var skillError = $('#' + skillId + '_skill_error');
-						if (e.error == "The game is disabled.") { // Argh game is disabled
-							log("Game is disabled. Checking again in " + (POLL_INTERVAL_DISABLED / 60).toFixed(2) + " minutes.");
-							skillError.html('Game is disabled.');
-							renewPollTimer(POLL_INTERVAL_DISABLED);	// try again later
-						}
-						else if (e.error == "Doesn't meet requirements") {
-							skillError.html('You cannot learn this skill yet.');
-							// Put the skill at the end of the queue.
-							gQ.removeSkillFromQueue(skillId);
-							gQ.addSkillToQueue(skillId);
-							renewPollTimer(POLL_INTERVAL_DEFAULT);	// try again later for unknown error
-						} else {
-							skillError.html('Error: ' + e.error);
-							renewPollTimer(POLL_INTERVAL_ERROR);	// try again later for unknown error
-						}
-						skillError.fadeIn('slow');
-					}
-				});	// end: submitSkill(q[0], function(e) {
-			}
+		// No skills are being learned. Refresh both caches.
+		doUnlearnedSkillsCache();
+		doAvailableSkillsCache(function(available) {
+			if(q.length > 0 && rotateQueueToLearnableSkill()) trySkillSubmit(q[0]);
 		});
 	
 	});	// end: api_call("skills.listLearning", {}, function(e) {
