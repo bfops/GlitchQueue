@@ -1,6 +1,5 @@
 // ==UserScript==
 // @name           Glitch Skill Helper
-// @version        0.1.7
 // @include        http://alpha.glitch.com
 // @include        http://beta.glitch.com
 // @include        http://alpha.glitch.com/
@@ -120,12 +119,6 @@ function GlitchQueue(playerTSID, localDb) {
 		this.saveQueue(q, handler);
 	};
 
-	// purge all queued skill
-	this.clearQueue = function() {
-		if (window.localStorage.getItem(this.Q_VALUE_KEY))
-			window.localStorage.removeItem(this.Q_VALUE_KEY);
-		this.setQueue([]);
-	};
 }	// end: GlitchQueue()
 // ===========================================================================
 
