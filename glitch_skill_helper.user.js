@@ -336,6 +336,7 @@ function submitSkill(skillId, handler) {
  * Refreshes Available Skills cache
  */
 function doAvailableSkillsCache(handler) {
+	log("Renewing available skills cache.");
 	api_call("skills.listAvailable", { per_page: 1024 }, function(e) {
 		if (e.ok && e.skills) {
 			gQ.availableSkills = e.skills;
@@ -345,6 +346,7 @@ function doAvailableSkillsCache(handler) {
 }
 
 function doUnlearnedSkillsCache(handler) {
+	log("Renewing unlearned skills cache.");
 	api_call("skills.listAll", { per_page: 1024 }, function(all) {
 		if(all.ok && all.items)
 			api_call("skills.listLearned", {}, function(learned) {
@@ -361,7 +363,7 @@ function doUnlearnedSkillsCache(handler) {
 */
 var currentSkillExpires = 0;	// Completetion datetime (secs since epoch) of the current learning skill
 function pollJob() {
-	log("pollJob started.");
+	log("Polling started");
 
 	var q = gQ.getQueue();
 
