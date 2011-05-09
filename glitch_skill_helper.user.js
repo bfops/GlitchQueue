@@ -99,9 +99,9 @@ function GlitchQueue(playerTSID, localDb) {
 	this.saveQueue = function(skillQueue, handler) {
 		window.localStorage.removeItem(this.Q_VALUE_KEY);
 		window.localStorage.setItem(this.Q_VALUE_KEY, skillQueue.toString());
-			this.setQueue(skillQueue);
-			if (handler)
-				handler();
+		this.setQueue(skillQueue);
+		if (handler)
+			handler();
 	};
 
 	// add skill to queue
