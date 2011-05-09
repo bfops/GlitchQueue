@@ -295,17 +295,13 @@ function showSkillInQueue(skillId) {
 	var percentCompleted = (100 - (remaining / skill.total_time * 100));
 
 	var skillQItem = $('<li class="skillQueueItem" id="' + skillId + '_skillqueue_item">'
-		+ '<div style="display: block; font-weight: bold; padding-bottom: 3px;" class="minor">'
-		+ 'Skill: <a style="font-weight: bold;" target="top" href="http://alpha.glitch.com/profiles/me/skills/">' + skill.name + '</a>'
-		+ '</div>'
+		+ '<div style="display: block; font-weight: bold; padding-bottom: 3px;" class="minor">' + skill.name + '</div>'
 		+ '<div id="' + skillId + '_skill_error" class="skillError"></div>'
-		+ '<a id="' + skillId + '_skillRemoveLink" title="Remove this skill from the Queue" style="color: #dd6666; font-size: 11px; float: right; display: block; padding-top: 4px;" '
-		+ 'href="javascript: void(0);">X</a>'
+		+ '<a id="' + skillId + '_skillRemoveLink" title="Remove this skill from the Queue" style="color: #dd6666; font-size: 11px; float: right; display: block; padding-top: 4px;">X</a>'
 		+ '<div id="' + skillId + '_skill_progress" class="progress" style="width: 200px; height: 22px; border-width: 2px; border-color: #a7b6bb;">'
 		+ '<div id="' + skillId + '_skill_remaining" style="font-size: 11px; position: absolute; left: 0pt; top: 3px; text-align: center; width: 200px;">' + format_sec(remaining) + '</div>'
 		+ '<div class="left"></div>'
 		+ '<div id="' + skillId + '_skill_indicator" class="indicator" style="height: 22px; width: ' + percentCompleted + '%; display: ' + (percentCompleted > 0 ? "block" : "none") + ';">'
-		+ '<img width="2" alt="" src="http://c1.glitch.bz/img/throbber-ext_28144.gif">'
 		+ '</div>'
 		+ '</div>'
 		+ '</li>').hide();
