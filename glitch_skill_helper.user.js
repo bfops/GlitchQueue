@@ -140,7 +140,7 @@ var playerTSID;	// player Tiny Speck ID
 
 function setUpGUI() {
 	$('body').data("glitchq", gQ.getSavedQueue());
-	var skillQueueSelect = $('<select style="margin-right: 10px; margin: left: 10px;" id="skillQueueSelect"><option value="">Choose!</option></select>');
+	var skillQueueSelect = $('<select style="margin-right: 10px; margin: left: 10px;" id="skillQueueSelect"></select>');
 	var skillQueueDialogueCont = $('<div class="dialog" id="skillQueueDialogueCont"></div>');
 	var skillQueueDialogue = $('<div class="dialog-inner" id="skillQueueDialogue">'
 		+ '<a class="close" href="javascript: void(0);" id="skillQueueDialogueclose">Close</a>'
