@@ -28,9 +28,10 @@ function relativeComplement(a, b) {
 	return ret;
 }
 
-function about() { alert ("ping's skill queuer for Glitch, modified by RobotGymnast."); }
 if (!(typeof GM_registerMenuCommand === 'undefined'))
-	GM_registerMenuCommand("Glitch Skill Helper - About", about);
+	GM_registerMenuCommand("Glitch Skill Helper - About", function() {
+		alert("ping's skill queuer for Glitch, modified by RobotGymnast.");
+	});
 
 /**
  * unsafeWindow variables / functions
@@ -62,7 +63,6 @@ function renewPollTimer(time) {
  * Logger function
  */
 function log(msg) {
-	// return;
 	var now = new Date();
 	if (!$.isPlainObject(msg))
 		msg = now.getHours() + ":" + now.getMinutes() + "." + now.getSeconds() + (now.getHours() > 11 ? "PM" : "AM") + " - " + msg;
@@ -132,7 +132,7 @@ function GlitchQueue(playerTSID, localDb) {
 			}
 		}.bind(this));
 	}
-	
+
 	// Re-cache unlearnable skills, and (if necessary) pass the cache to [handler].
 	this.doUnlearnedSkillsCache = function(handler) {
 		log("Renewing unlearned skills cache.");
@@ -175,11 +175,11 @@ function setUpGUI() {
 	var skillQueueSelect = $('<select style="margin-right: 10px; margin: left: 10px;" id="skillQueueSelect"></select>');
 	var skillQueueDialogueCont = $('<div class="dialog" id="skillQueueDialogueCont"></div>');
 	var skillQueueDialogue = $('<div class="dialog-inner" id="skillQueueDialogue">'
-		+ '<a class="close" href="javascript: void(0);" id="skillQueueDialogueclose">Close</a>'
+		+ '<a class="close" id="skillQueueDialogueclose">Close</a>'
 		+ '<h2>Send a skill to Mr. Q!</h2>'
 		+ 'Available Skills: '
 		+ '</div>');
-	var skillQueueAddBtn = $('<a id="skillQueueAddBtn" href="javascript: void(0);" class="button-tiny button-minor">Add!</a>');
+	var skillQueueAddBtn = $('<a id="skillQueueAddBtn" class="button-tiny button-minor">Add!</a>');
 	skillQueueDialogue.append(skillQueueSelect);
 	skillQueueDialogue.append(skillQueueAddBtn);
 	skillQueueDialogueCont.append(skillQueueDialogue);
@@ -215,10 +215,8 @@ $(document).ready(function() {
 	gQ.doAvailableSkillsCache(function(x) { displayQueuedItems(); });
 
 	setUpGUI();
-
-	// Delay to avoid refreshing cache twice
 	renewPollTimer(0);
-	
+
 });	// end: $(document).ready
 // ----------------------------------------------------------------------------------------
 
@@ -238,7 +236,7 @@ function updateSkillQueueProgress(skillId) {
 			else if (remaining <= 10) prefix = 'Almost there! ';
 			else if (remaining <= 15) prefix = 'You can do it! ';
 			else if (remaining <= 20) prefix = 'Oh, so close... ';
-			
+
 			$('#' + skillId + '_skill_remaining').html(prefix + format_sec(remaining));
 			$('#' + skillId + '_skill_indicator').width((100 - (remaining / skill.total_time * 100)) + '%');
 
@@ -386,7 +384,7 @@ function pollJob() {
 				currentSkillExpires = 0;
 				var skillError = $('#' + skillId + '_skill_error');
 				if (e.error == "The game is disabled.") { // Argh game is disabled
-					log("Game is disabled. Checking again in " + (POLL_INTERVAL_DISABLED / 60).toFixed(2) + " minutes.");
+					log("Game is disabled. Checking again in " + (POLL_INTERVAL_DISABLED / 60) + " minutes.");
 					skillError.html('Game is disabled.');
 					renewPollTimer(POLL_INTERVAL_DISABLED);	// try again later
 				}
@@ -407,6 +405,7 @@ function pollJob() {
 
 	// We're still learning a skill.
 	if (currentSkillExpires > time() || q.length == 0) {
+		log("Nothing to be done.. polling again later");
 		renewPollTimer(POLL_INTERVAL_DEFAULT);
 		return;
 	}
@@ -414,23 +413,26 @@ function pollJob() {
 	api_call("skills.listLearning", {}, function(e) {
 		if (!e.ok) { log("Oops, poll broke while trying to check learning. " + e.error); return; }
 
-		// Another skill was selected externally.
+		// Another skill was selected outside of this script.
 		if (e.learning) {
 			for (skillId in e.learning) {
+				log("Skill " + gQ.unlearnedSkills[skillId].name + " selected externally");
 				var remaining = e.learning[skillId].time_remaining;
 				currentSkillExpires = time() + remaining;
 				// Poll once the skill is done.
-				renewPollTimer(remaining);	
+				renewPollTimer(remaining);
 				return;
 			}
 		}
 
-		// No skills are being learned. Refresh both caches.
+		log("No skills are being learned");
+
+		// Refresh both caches.
 		gQ.doUnlearnedSkillsCache();
-		gQ.doAvailableSkillsCache(function(available) {
+		gQ.doAvailableSkillsCache(function(x) {
 			if(q.length > 0 && rotateQueueToLearnableSkill()) trySkillSubmit(q[0]);
 		});
-	
+
 	});	// end: api_call("skills.listLearning", {}, function(e) {
 
 } // end: pollJob()
