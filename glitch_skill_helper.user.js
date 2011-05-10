@@ -122,6 +122,31 @@ function GlitchQueue(playerTSID, localDb) {
 		this.saveQueue(q, handler);
 	};
 
+	// Re-cache available skills, and (if necessary) pass the cache to [handler].
+	this.doAvailableSkillsCache = function(handler) {
+		log("Renewing available skills cache.");
+		api_call("skills.listAvailable", { per_page: 1024 }, function(e) {
+			if (e.ok && e.skills) {
+				this.availableSkills = e.skills;
+				if (handler) handler(e.skills);
+			}
+		}.bind(this));
+	}
+	
+	// Re-cache unlearnable skills, and (if necessary) pass the cache to [handler].
+	this.doUnlearnedSkillsCache = function(handler) {
+		log("Renewing unlearned skills cache.");
+		api_call("skills.listAll", { per_page: 1024 }, function(all) {
+			if(all.ok && all.items)
+				api_call("skills.listLearned", {}, function(learned) {
+					if(learned.ok && learned.skills) {
+						this.unlearnedSkills = relativeComplement(learned.skills, all.items);
+						if(handler) handler(unlearnedSkills);
+					}
+				}.bind(this));
+		}.bind(this));
+	}
+
 }	// end: GlitchQueue()
 // ===========================================================================
 
@@ -186,8 +211,8 @@ $(document).ready(function() {
 	if (!playerTSID) return;
 
 	gQ = new GlitchQueue(playerTSID);
-	doUnlearnedSkillsCache();
-	doAvailableSkillsCache(function(x) { displayQueuedItems(); });
+	gQ.doUnlearnedSkillsCache();
+	gQ.doAvailableSkillsCache(function(x) { displayQueuedItems(); });
 
 	setUpGUI();
 
@@ -324,31 +349,6 @@ function submitSkill(skillId, handler) {
 	});
 }
 
-/**
- * Refreshes Available Skills cache
- */
-function doAvailableSkillsCache(handler) {
-	log("Renewing available skills cache.");
-	api_call("skills.listAvailable", { per_page: 1024 }, function(e) {
-		if (e.ok && e.skills) {
-			gQ.availableSkills = e.skills;
-			if (handler) handler(e.skills);
-		}
-	});
-}
-
-function doUnlearnedSkillsCache(handler) {
-	log("Renewing unlearned skills cache.");
-	api_call("skills.listAll", { per_page: 1024 }, function(all) {
-		if(all.ok && all.items)
-			api_call("skills.listLearned", {}, function(learned) {
-				if(learned.ok && learned.skills) {
-					gQ.unlearnedSkills = relativeComplement(learned.skills, all.items);
-					if(handler) handler(gQ.unlearnedSkills);
-				}
-			});
-	});
-}
 
 /**
  * Massively too convulated polling job
@@ -426,8 +426,8 @@ function pollJob() {
 		}
 
 		// No skills are being learned. Refresh both caches.
-		doUnlearnedSkillsCache();
-		doAvailableSkillsCache(function(available) {
+		gQ.doUnlearnedSkillsCache();
+		gQ.doAvailableSkillsCache(function(available) {
 			if(q.length > 0 && rotateQueueToLearnableSkill()) trySkillSubmit(q[0]);
 		});
 	
