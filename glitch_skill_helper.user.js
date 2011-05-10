@@ -78,7 +78,6 @@ log("Ding! Script started.");
  */
 function GlitchQueue(playerTSID, localDb) {
 	this.Q_VALUE_KEY = "glitch_SkillQueue_" + playerTSID;	// storage key name
-	this.skillLearning = {};
 	this.availableSkills = {};
 	this.unlearnedSkills = {};
 	this.playerTSID = playerTSID;
@@ -224,10 +223,9 @@ $(document).ready(function() {
  * Updates UI progress bar for the skill being learnt
  */
 function updateSkillQueueProgress(skillId) {
-	if (gQ.skillLearning[skillId]) {
-		var skill = gQ.skillLearning[skillId];
+	if (gQ.skillLearning) {
 		var remaining = currentSkillExpires - time();
-		var percentCompleted = (100 - (remaining / skill.total_time * 100));
+		var percentCompleted = (100 - (remaining / gQ.skillLearning.total_time * 100));
 		$('#' + skillId + '_skill_indicator').show();
 
 		if (remaining > 0) {
@@ -339,7 +337,7 @@ function showSkillInQueue(skillId) {
 function submitSkill(skillId, handler) {
 	api_call("skills.learn", { 'skill_id' : skillId }, function(e) {
 		if (e.ok) {
-			gQ.skillLearning[skillId] = gQ.availableSkills[skillId];
+			gQ.skillLearning = gQ.availableSkills[skillId];
 			if (uiQTimer) window.clearTimeout(uiQTimer);
 			uiQTimer = window.setTimeout(function() { updateSkillQueueProgress(skillId); }, 1000);
 		}
@@ -353,7 +351,7 @@ function submitSkill(skillId, handler) {
 */
 var currentSkillExpires = 0;	// Completetion datetime (secs since epoch) of the current learning skill
 function pollJob() {
-	log("Polling started");
+	log("Checking skill status...");
 
 	var q = gQ.getQueue();
 
@@ -378,22 +376,15 @@ function pollJob() {
 				$('#' + skillId + '_skill_error').html('');
 				$('#' + skillId + '_skill_error').hide();
 				$('#' + skillId + '_skillRemoveLink').hide();
-				currentSkillExpires = available[skillId].time_remaining + time();
-				renewPollTimer(available[skillId].time_remaining);
+				currentSkillExpires = gQ.availableSkills[skillId].time_remaining + time();
+				renewPollTimer(gQ.availableSkills[skillId].time_remaining);
 			} else {
 				currentSkillExpires = 0;
 				var skillError = $('#' + skillId + '_skill_error');
 				if (e.error == "The game is disabled.") { // Argh game is disabled
-					log("Game is disabled. Checking again in " + (POLL_INTERVAL_DISABLED / 60) + " minutes.");
+					log("Game is disabled. Checking again in " + Math.round(POLL_INTERVAL_DISABLED / 60) + " minutes.");
 					skillError.html('Game is disabled.');
 					renewPollTimer(POLL_INTERVAL_DISABLED);	// try again later
-				}
-				else if (e.error == "Doesn't meet requirements") {
-					skillError.html('You cannot learn this skill yet.');
-					// Put the skill at the end of the queue.
-					gQ.removeSkillFromQueue(skillId);
-					gQ.addSkillToQueue(skillId);
-					renewPollTimer(POLL_INTERVAL_DEFAULT);	// try again later for unknown error
 				} else {
 					skillError.html('Error: ' + e.error);
 					renewPollTimer(POLL_INTERVAL_ERROR);	// try again later for unknown error
@@ -417,18 +408,18 @@ function pollJob() {
 		for (skillId in e.learning) {
 			// Another skill was selected outside of this script.
 			var skill = e.learning[skillId];
-			log("Skill " + skill.name + " selected externally");
 			var remaining = skill.time_remaining;
 			currentSkillExpires = time() + remaining;
 			// Poll once the skill is done.
 			renewPollTimer(remaining);
+			log("Skill " + skill.name + " selected outside of this script. Checking back in " + Math.round(remaining / 60) + " minutes.");
 
 			learned = true;
 		}
 
 		if(learned) return;
 
-		log("No skills are being learned");
+		log("No skills are currently being learned");
 
 		// Refresh both caches.
 		gQ.doUnlearnedSkillsCache();
