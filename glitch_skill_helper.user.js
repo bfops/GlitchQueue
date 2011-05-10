@@ -47,6 +47,21 @@ if (!(typeof unsafeWindow === 'undefined')) {
 	window = unsafeWindow;
 }
 
+function API() {
+	this.call = function(callName, args, handler) {
+		if (this.stuffToReturn)
+			handler(stuffToReturn);
+		else
+			api_call(callName, args, handler);
+	}
+
+	this.setReturnStuff = function(stuff) {
+		this.stuffToReturn = stuff;
+	}
+}
+
+var gAPI = new API;
+
 /**
  * Timer jobs
  */
@@ -124,7 +139,7 @@ function GlitchQueue(playerTSID, localDb) {
 	// Re-cache available skills, and (if necessary) pass the cache to [handler].
 	this.doAvailableSkillsCache = function(handler) {
 		log("Renewing available skills cache.");
-		api_call("skills.listAvailable", { per_page: 1024 }, function(e) {
+		gAPI.call("skills.listAvailable", { per_page: 1024 }, function(e) {
 			if (e.ok && e.skills) {
 				this.availableSkills = e.skills;
 				if (handler) handler(e.skills);
@@ -135,9 +150,9 @@ function GlitchQueue(playerTSID, localDb) {
 	// Re-cache unlearnable skills, and (if necessary) pass the cache to [handler].
 	this.doUnlearnedSkillsCache = function(handler) {
 		log("Renewing unlearned skills cache.");
-		api_call("skills.listAll", { per_page: 1024 }, function(all) {
+		gAPI.call("skills.listAll", { per_page: 1024 }, function(all) {
 			if(all.ok && all.items)
-				api_call("skills.listLearned", {}, function(learned) {
+				gAPI.call("skills.listLearned", {}, function(learned) {
 					if(learned.ok && learned.skills) {
 						this.unlearnedSkills = relativeComplement(learned.skills, all.items);
 						if(handler) handler(unlearnedSkills);
@@ -335,7 +350,7 @@ function showSkillInQueue(skillId) {
  * Submit skill for learning
  */
 function submitSkill(skillId, handler) {
-	api_call("skills.learn", { 'skill_id' : skillId }, function(e) {
+	gAPI.call("skills.learn", { 'skill_id' : skillId }, function(e) {
 		if (e.ok) {
 			gQ.skillLearning = gQ.availableSkills[skillId];
 			if (uiQTimer) window.clearTimeout(uiQTimer);
@@ -401,7 +416,7 @@ function pollJob() {
 		return;
 	}
 
-	api_call("skills.listLearning", {}, function(e) {
+	gAPI.call("skills.listLearning", {}, function(e) {
 		if (!e.ok || !e.learning) { log("Oops, poll broke while trying to check learning. " + e.error); return; }
 
 		var learned = false;
@@ -427,7 +442,7 @@ function pollJob() {
 			if(q.length > 0 && rotateQueueToLearnableSkill()) trySkillSubmit(q[0]);
 		});
 
-	});	// end: api_call("skills.listLearning", {}, function(e) {
+	});	// end: gAPI.call("skills.listLearning", {}, function(e) {
 
 } // end: pollJob()
 
