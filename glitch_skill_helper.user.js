@@ -411,19 +411,22 @@ function pollJob() {
 	}
 
 	api_call("skills.listLearning", {}, function(e) {
-		if (!e.ok) { log("Oops, poll broke while trying to check learning. " + e.error); return; }
+		if (!e.ok || !e.learning) { log("Oops, poll broke while trying to check learning. " + e.error); return; }
 
-		// Another skill was selected outside of this script.
-		if (e.learning) {
-			for (skillId in e.learning) {
-				log("Skill " + gQ.unlearnedSkills[skillId].name + " selected externally");
-				var remaining = e.learning[skillId].time_remaining;
-				currentSkillExpires = time() + remaining;
-				// Poll once the skill is done.
-				renewPollTimer(remaining);
-				return;
-			}
+		var learned = false;
+		for (skillId in e.learning) {
+			// Another skill was selected outside of this script.
+			var skill = e.learning[skillId];
+			log("Skill " + skill.name + " selected externally");
+			var remaining = skill.time_remaining;
+			currentSkillExpires = time() + remaining;
+			// Poll once the skill is done.
+			renewPollTimer(remaining);
+
+			learned = true;
 		}
+
+		if(learned) return;
 
 		log("No skills are being learned");
 
