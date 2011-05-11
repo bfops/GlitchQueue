@@ -9,6 +9,8 @@
 // @description	   Manages skill-queuing for learning in Glitch.
 // ==/UserScript==
 
+// Don't change this unless you know what a unit test is, and you want to enable them.
+var unittest = true;
 var POLL_INTERVAL_DEFAULT = 1;
 var POLL_INTERVAL_DISABLED = 5 * 60; // poll interval when game is disabled
 var POLL_INTERVAL_ERROR = 60;	// poll interval when unknown error is encountered, maybe 500 errs
@@ -48,16 +50,55 @@ if (!(typeof unsafeWindow === 'undefined')) {
 }
 
 function API() {
+	this.apiReturns = {};
 	this.call = function(callName, args, handler) {
-		if (this.stuffToReturn)
-			handler(stuffToReturn);
+		if (this.apiReturns && this.apiReturns[callName])
+			handler(apiReturns[callName]);
 		else
 			api_call(callName, args, handler);
 	}
 
-	this.setReturnStuff = function(stuff) {
-		this.stuffToReturn = stuff;
+	this.setAPIReturn = function(apiCallName, apiReturn) {
+		this.apiReturns[apiCallName] = apiReturn;
 	}
+}
+
+function runUnittests() {
+	function test_apiReturns() {
+		var testAPI = new API;
+		var desired = { "purpleDragon" : { "ofcourse" : 1, "whynot?" : { "excelent" : 12, "12" : "hello" } } };
+		var numberReturned = 0;
+		var totalNumber = 0;
+		var failed = false;
+
+		for (callName in desired) {
+			testAPI.setAPIReturn(callName, desired[callName]);
+			testAPI.call(callName, function(ret) {
+				if(ret != desired[callName])
+					failed = true;
+
+				++numberReturned;
+			}
+			++totalNumber;
+		}
+
+		while(totalNumber != numberReturned && failed == false) {}
+
+		return failed;
+	}
+
+	function test_addToQueue() {
+		gAPI.setAPIReturn("listAll", { "ok" : 1, items : { "magic" : { name : "Magic", total_time : 10, remaining_time : 10 } } });
+		gAPI.setAPIReturn("listAvailable", { "ok" : 1, items : { "magic" : { name : "Magic", total_time : 10, remaining_time : 10 } } });
+	}
+
+	var unittests = [test_apiReturns, test_addToQueue, test_removeFromQueue, test_unlearnedSkill, test_skillLoadNoQueue, test_skillLoadQueueFrontLearnable, test_skillLoadQueueMiddleLearnable, test_skillLoadQueueNoLearnable, test_noSkillLoadNoQueue, test_noSkillLoadQueueFrontLearnable, test_noSkillLoadQueueMiddleLearnable, test_noSkillLoadQueueNoLearnable, test_skillCompletedNoQueue, test_skillCompletedQueue];
+	log("Running unit tests...");
+
+	for(var i = 0; i < unittests.length; ++i)
+		log("Unit test #" + (i + 1) + " " + (unittests[i]() ? "succeeded" : "failed") + ".");
+
+	log("Done with unit tests.");
 }
 
 var gAPI = new API;
@@ -215,7 +256,7 @@ function setUpGUI() {
 }
 
 // ----------------------------------------------------------------------------------------
-$(document).ready(function() {
+function startup() {
 	if (!window.localStorage) {
 		log('localStorage is not supported in this browser.');
 		return;
@@ -225,13 +266,20 @@ $(document).ready(function() {
 	if (!playerTSID) return;
 
 	gQ = new GlitchQueue(playerTSID);
+	setUpGUI();
+
+	if (unittest) {
+		runUnittests();
+		return;
+	}
+
 	gQ.doUnlearnedSkillsCache();
 	gQ.doAvailableSkillsCache(function(x) { displayQueuedItems(); });
 
-	setUpGUI();
 	renewPollTimer(0);
+}
 
-});	// end: $(document).ready
+$(document).ready(startup);
 // ----------------------------------------------------------------------------------------
 
 /**
