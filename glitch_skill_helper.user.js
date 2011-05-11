@@ -65,8 +65,13 @@ function API() {
 }
 
 function UnitTestCollection() {
-	function test_apiReturns() {
-		var testName = "API return test";
+	function UnitTest(func, name) {
+		this.run = function() {
+			func(name);
+		}
+	}
+
+	function test_apiReturns(testName) {
 		var testAPI = new API;
 		var desired = { "purpleDragon" : { "ofcourse" : 1, "whynot?" : { "excelent" : 12, "12" : "hello" } } };
 		var numberReturned = 0;
@@ -97,9 +102,28 @@ function UnitTestCollection() {
 			log("Done unit tests.");
 	}
 
-	var unittests = [test_apiReturns, test_addToQueue, test_removeFromQueue, test_unlearnedSkill, test_skillLoadNoQueue, test_skillLoadQueueFrontLearnable, test_skillLoadQueueMiddleLearnable, test_skillLoadQueueNoLearnable, test_noSkillLoadNoQueue, test_noSkillLoadQueueFrontLearnable, test_noSkillLoadQueueMiddleLearnable, test_noSkillLoadQueueNoLearnable, test_skillCompletedNoQueue, test_skillCompletedQueue];
-	for(test in unittests)
-		test();
+	var unittests = [
+		new UnitTest(test_apiReturns, "API wrapper return-hooking")/*,
+		new UnitTest(test_addToQueue, "Adding to queue"),
+		new UnitTest(test_removeFromQueue, "Removing from queue"),
+		new UnitTest(test_unlearnedSkill, "Unlearned skill list"),
+		new UnitTest(test_skillLoadNoQueue, "Skill being learned on page load, no skill queue"),
+		new UnitTest(test_skillLoadQueueFrontLearnable, "Skill being learned on page load, queue with learnable skill"),
+		new UnitTest(test_skillLoadQueueMiddleLearnable, "Skill being learned on page load, queue with learnable skill 2"),
+		new UnitTest(test_skillLoadQueueNoLearnable, "Skill being learned on page load, queue with no learnable skills"),
+		new UnitTest(test_noSkillLoadNoQueue, "Page load with no queue"),
+		new UnitTest(test_noSkillLoadQueueFrontLearnable, "Page load with queue including learnable skill"),
+		new UnitTest(test_noSkillLoadQueueMiddleLearnable, "Page load with queue including learnable skill 2"),
+		new UnitTest(test_noSkillLoadQueueNoLearnable, "Page load with queue including no learnable skills"),
+		new UnitTest(test_skillCompletedNoQueue, "Skill completed, no queue"),
+		new UnitTest(test_skillCompletedQueueFrontLearnable, "Skill completed, queue with learnable skill"),
+		new UnitTest(test_skillCompletedQueueMiddleLearnable, "Skill completed, queue with learnable skill 2"),
+		new UnitTest(test_skillCompletedQueueNoLearnable, "Skill completed, queue with no learnable skills")*/
+	];
+
+	$.each(unittests, function(i, test) {
+		test.run();
+	});
 }
 
 // Skill Queue styling
