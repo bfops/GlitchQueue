@@ -63,7 +63,7 @@ function API() {
 	}
 }
 
-function runUnittests() {
+function UnitTestCollection() {
 	function test_apiReturns() {
 		var testAPI = new API;
 		var desired = { "purpleDragon" : { "ofcourse" : 1, "whynot?" : { "excelent" : 12, "12" : "hello" } } };
@@ -78,7 +78,7 @@ function runUnittests() {
 					failed = true;
 
 				++numberReturned;
-			}
+			});
 			++totalNumber;
 		}
 
@@ -92,13 +92,13 @@ function runUnittests() {
 		api.setAPIReturn("listAvailable", { "ok" : 1, items : { "magic" : { name : "Magic", total_time : 10, remaining_time : 10 } } });
 	}
 
+	function logTestResult(testName, result) {
+		log("Test " + testName + " " + (result ? "succeeded" : "failed") + ".");
+	}
+
 	var unittests = [test_apiReturns, test_addToQueue, test_removeFromQueue, test_unlearnedSkill, test_skillLoadNoQueue, test_skillLoadQueueFrontLearnable, test_skillLoadQueueMiddleLearnable, test_skillLoadQueueNoLearnable, test_noSkillLoadNoQueue, test_noSkillLoadQueueFrontLearnable, test_noSkillLoadQueueMiddleLearnable, test_noSkillLoadQueueNoLearnable, test_skillCompletedNoQueue, test_skillCompletedQueue];
-	log("Running unit tests...");
-
-	for(var i = 0; i < unittests.length; ++i)
-		log("Unit test #" + (i + 1) + " " + (unittests[i]() ? "succeeded" : "failed") + ".");
-
-	log("Done with unit tests.");
+	for(test in unittests)
+		test();
 }
 
 // Skill Queue styling
@@ -482,7 +482,7 @@ $(document).ready(function() {
 
 	if(unittest) {
 		log("In unit testing mode.");
-		runUnittests();
+		var unittests = new UnitTestCollection;
 	} else {
 		log("Ding! Script started.");
 		queueInterface = new QueueInterface;
