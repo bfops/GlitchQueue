@@ -24,21 +24,21 @@ function relativeComplement(a, b) {
 	var ret = {};
 
 	for (x in b)
-		if(typeof a[x] === "undefined")
+		if(!a[x])
 			ret[x] = b[x];
 
 	return ret;
 }
 
-if(!(typeof GM_registerMenuCommand === 'undefined'))
-	GM_registerMenuCommand("Glitch Skill Helper - About", function() {
+if(GM_registerMenuCommand)
+	GM_registerMenuCommand("About Glitch Skill Queuer", function() {
 		alert("ping's skill queuer for Glitch, modified by RobotGymnast.");
 	});
 
 /**
  * unsafeWindow variables / functions
  */
-if(!(typeof unsafeWindow === 'undefined')) {
+if(unsafeWindow) {
 	$ = unsafeWindow.$;
 	api_call = unsafeWindow.api_call;
 	queue = unsafeWindow.queue;
@@ -102,7 +102,7 @@ function UnitTestCollection() {
 }
 
 // Skill Queue styling
-if(!(typeof GM_addStyle === 'undefined')) {
+if(GM_addStyle) {
 	GM_addStyle('#skillQueue { border-top: 1px solid #C8E1DE; margin-top:10px; margin-bottom: 40px; }');
 	GM_addStyle('.skillQueueItem { margin-top:10px; }');
 	GM_addStyle('.skillError { border-left: 3px solid #DD8888; color: #DD8888; font-size: 11px; font-style: italic; margin-left: 2px; margin-bottom: 2px; padding: 0 3px 0 3px; display: none; }');
@@ -140,7 +140,7 @@ function log(msg) {
 	if(!$.isPlainObject(msg))
 		msg = now.getHours() + ":" + now.getMinutes() + "." + now.getSeconds() + (now.getHours() > 11 ? "PM" : "AM") + " - " + msg;
 	if(window.console) window.console.log(msg);
-	if(!(typeof GM_log === 'undefined')) GM_log(msg);
+	if(GM_log) GM_log(msg);
 }
 
 /**
@@ -228,7 +228,6 @@ function QueueInterface() {
 
 	// Set tool tip for skill currently being learnt
 	function setTooltipForCurrentLearning() {
-		if(typeof queue === 'undefined') return;
 		var completeDate = new Date(currentSkillExpires * 1000);
 
 		$('.progress').attr('title', 'Finishing at '
