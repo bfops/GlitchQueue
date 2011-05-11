@@ -66,26 +66,21 @@ function API() {
 
 function UnitTestCollection() {
 	function test_apiReturns() {
+		var testName = "API return test";
 		var testAPI = new API;
 		var desired = { "purpleDragon" : { "ofcourse" : 1, "whynot?" : { "excelent" : 12, "12" : "hello" } } };
 		var numberReturned = 0;
 		var totalNumber = 0;
-		var failed = false;
 
 		for (callName in desired) {
 			testAPI.setAPIReturn(callName, desired[callName]);
 			testAPI.call(callName, function(ret) {
 				if(ret != desired[callName])
-					failed = true;
-
-				++numberReturned;
-			});
-			++totalNumber;
+					logTestResult(testName, false);
+			}.bind(this));
 		}
 
-		while(totalNumber != numberReturned && failed == false) {}
-
-		return failed;
+		logTestResult(testName, true);
 	}
 
 	function test_addToQueue() {
@@ -93,8 +88,13 @@ function UnitTestCollection() {
 		api.setAPIReturn("listAvailable", { "ok" : 1, items : { "magic" : { name : "Magic", total_time : 10, remaining_time : 10 } } });
 	}
 
+	var testCompletionNumber = 0;
+
 	function logTestResult(testName, result) {
-		log("Test " + testName + " " + (result ? "succeeded" : "failed") + ".");
+		log('Test "' + testName + '" ' + (result ? "succeeded" : "failed") + ".");
+
+		if(++testCompletionNumber == unittests.length)
+			log("Done unit tests.");
 	}
 
 	var unittests = [test_apiReturns, test_addToQueue, test_removeFromQueue, test_unlearnedSkill, test_skillLoadNoQueue, test_skillLoadQueueFrontLearnable, test_skillLoadQueueMiddleLearnable, test_skillLoadQueueNoLearnable, test_noSkillLoadNoQueue, test_noSkillLoadQueueFrontLearnable, test_noSkillLoadQueueMiddleLearnable, test_noSkillLoadQueueNoLearnable, test_skillCompletedNoQueue, test_skillCompletedQueue];
