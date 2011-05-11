@@ -50,16 +50,17 @@ if(unsafeWindow) {
 }
 
 function API() {
-	this.apiReturns = {};
+	var apiReturns = {};
 	this.call = function(callName, args, handler) {
-		if(this.apiReturns && this.apiReturns[callName])
-			handler(apiReturns[callName]);
+		if(apiReturns && apiReturns[callName]) {
+			if(handler) handler(apiReturns[callName]);
+		}
 		else
 			api_call(callName, args, handler);
 	}
 
 	this.setAPIReturn = function(apiCallName, apiReturn) {
-		this.apiReturns[apiCallName] = apiReturn;
+		apiReturns[apiCallName] = apiReturn;
 	}
 }
 
