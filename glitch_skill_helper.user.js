@@ -218,7 +218,7 @@ function GlitchQueue(playerTSID, localDb) {
 	// Re-cache available skills, and (if necessary) pass the cache to [handler].
 	this.doAvailableSkillsCache = function(api, handler) {
 		log("Renewing available skills cache.");
-		api.call("skills.listAvailable", { per_page: 1024 }, function(e) {
+		this.api.call("skills.listAvailable", { per_page: 1024 }, function(e) {
 			if(e.ok && e.skills) {
 				this.availableSkills = e.skills;
 				if(handler) handler(e.skills);
@@ -229,9 +229,9 @@ function GlitchQueue(playerTSID, localDb) {
 	// Re-cache unlearnable skills, and (if necessary) pass the cache to [handler].
 	this.doUnlearnedSkillsCache = function(api, handler) {
 		log("Renewing unlearned skills cache.");
-		api.call("skills.listAll", { per_page: 1024 }, function(all) {
+		this.api.call("skills.listAll", { per_page: 1024 }, function(all) {
 			if(all.ok && all.items)
-				api.call("skills.listLearned", {}, function(learned) {
+				this.api.call("skills.listLearned", {}, function(learned) {
 					if(learned.ok && learned.skills) {
 						this.unlearnedSkills = relativeComplement(learned.skills, all.items);
 						if(handler) handler(this.unlearnedSkills);
@@ -261,7 +261,7 @@ function QueueInterface() {
 
 	this.skillQueue = {};
 
-	var api = new API;
+	this.api = new API;
 	var uiQTimer = 0;
 	var pollQTimer = 0;
 
@@ -399,7 +399,7 @@ function QueueInterface() {
 	 * Submit skill for learning
 	 */
 	function submitSkill(skillId, handler) {
-		api.call("skills.learn", { 'skill_id' : skillId }, function(e) {
+		this.api.call("skills.learn", { 'skill_id' : skillId }, function(e) {
 			if(e.ok) {
 				skillQueue.skillLearning[skillId] = skillQueue.availableSkills[skillId];
 				if(uiQTimer) window.clearTimeout(uiQTimer);
@@ -485,7 +485,7 @@ function QueueInterface() {
 				if(q.length > 0 && rotateQueueToLearnableSkill()) trySkillSubmit(q[0]);
 			});
 
-		});	// end: api_call("skills.listLearning", {}, function(e) {
+		});	// end: this.api.call("skills.listLearning", {}, function(e) {
 
 	} // end: pollJob()
 
