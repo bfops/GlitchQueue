@@ -11,7 +11,6 @@
 
 // Don't change this unless you know what a unit test is, and you want to enable them.
 var unittest = true;
-var POLL_INTERVAL_DEFAULT = 1;
 var POLL_INTERVAL_DISABLED = 5 * 60; // poll interval when game is disabled
 var POLL_INTERVAL_ERROR = 60;	// poll interval when unknown error is encountered, maybe 500 errs
 
@@ -96,7 +95,7 @@ function UnitTestCollection() {
 	var testCompletionNumber = 0;
 
 	function logTestResult(testName, result) {
-		log('Test "' + testName + '" ' + (result ? "succeeded" : "failed") + ".");
+		log("Test '" + testName + "' " + (result ? "succeeded" : "failed") + ".");
 
 		if(++testCompletionNumber == unittests.length)
 			log("Done unit tests.");
@@ -345,8 +344,12 @@ function QueueInterface() {
 	 */
 	this.skillQueueAddBtn_onClick = function() {
 		var skillId = $("#skillQueueSelect").val();
-		if(skillId)
-			skillQueue.addSkillToQueue(skillId, function() { showSkillInQueue(skillId); }.bind(this) );
+		if(skillId) {
+			skillQueue.addSkillToQueue(skillId, function() { showSkillInQueue(skillId); }.bind(this));
+
+			if(pollQTimer == 0)
+				renewPollTimer(1);
+		}
 	}
 
 	/**
@@ -452,12 +455,6 @@ function QueueInterface() {
 					skillError.fadeIn('slow');
 				}
 			});	// end: submitSkill(q[0], function(e) {
-		}
-
-		if(q.length == 0) {
-			log("Nothing to be done.");
-			renewPollTimer(POLL_INTERVAL_DEFAULT);
-			return;
 		}
 
 		api_call("skills.listLearning", {}, function(e) {
