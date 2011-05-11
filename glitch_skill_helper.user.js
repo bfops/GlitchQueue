@@ -24,13 +24,13 @@ function relativeComplement(a, b) {
 	var ret = {};
 
 	for (x in b)
-		if (typeof a[x] === "undefined")
+		if(typeof a[x] === "undefined")
 			ret[x] = b[x];
 
 	return ret;
 }
 
-if (!(typeof GM_registerMenuCommand === 'undefined'))
+if(!(typeof GM_registerMenuCommand === 'undefined'))
 	GM_registerMenuCommand("Glitch Skill Helper - About", function() {
 		alert("ping's skill queuer for Glitch, modified by RobotGymnast.");
 	});
@@ -38,7 +38,7 @@ if (!(typeof GM_registerMenuCommand === 'undefined'))
 /**
  * unsafeWindow variables / functions
  */
-if (!(typeof unsafeWindow === 'undefined')) {
+if(!(typeof unsafeWindow === 'undefined')) {
 	$ = unsafeWindow.$;
 	api_call = unsafeWindow.api_call;
 	queue = unsafeWindow.queue;
@@ -52,7 +52,7 @@ if (!(typeof unsafeWindow === 'undefined')) {
 function API() {
 	this.apiReturns = {};
 	this.call = function(callName, args, handler) {
-		if (this.apiReturns && this.apiReturns[callName])
+		if(this.apiReturns && this.apiReturns[callName])
 			handler(apiReturns[callName]);
 		else
 			api_call(callName, args, handler);
@@ -102,7 +102,7 @@ function runUnittests() {
 }
 
 // Skill Queue styling
-if (!(typeof GM_addStyle === 'undefined')) {
+if(!(typeof GM_addStyle === 'undefined')) {
 	GM_addStyle('#skillQueue { border-top: 1px solid #C8E1DE; margin-top:10px; margin-bottom: 40px; }');
 	GM_addStyle('.skillQueueItem { margin-top:10px; }');
 	GM_addStyle('.skillError { border-left: 3px solid #DD8888; color: #DD8888; font-size: 11px; font-style: italic; margin-left: 2px; margin-bottom: 2px; padding: 0 3px 0 3px; display: none; }');
@@ -124,7 +124,7 @@ function setUpGUI() {
 
 	skillQueueDialogueCont.hide();
 	// bind events
-	skillQueueAddBtn.click(function() { queueInterface.skillQueue.skillQueueAddBtn_onClick(); });
+	skillQueueAddBtn.click(function() { queueInterface.skillQueueAddBtn_onClick(); });
 	$("#skillQueueDialogueclose").click(function() { queueInterface.hideAddQDialogue(); });
 
 	// Sidebar
@@ -137,10 +137,10 @@ function setUpGUI() {
 
 function log(msg) {
 	var now = new Date();
-	if (!$.isPlainObject(msg))
+	if(!$.isPlainObject(msg))
 		msg = now.getHours() + ":" + now.getMinutes() + "." + now.getSeconds() + (now.getHours() > 11 ? "PM" : "AM") + " - " + msg;
-	if (window.console) window.console.log(msg);
-	if (!(typeof GM_log === 'undefined')) GM_log(msg);
+	if(window.console) window.console.log(msg);
+	if(!(typeof GM_log === 'undefined')) GM_log(msg);
 }
 
 /**
@@ -155,7 +155,7 @@ function GlitchQueue(playerTSID, localDb) {
 
 	// explode queue array from storage
 	this.getSavedQueue = function() {
-		if (window.localStorage.getItem(this.Q_VALUE_KEY))
+		if(window.localStorage.getItem(this.Q_VALUE_KEY))
 			return window.localStorage.getItem(this.Q_VALUE_KEY).split(",");
 		return [];
 	};
@@ -169,14 +169,14 @@ function GlitchQueue(playerTSID, localDb) {
 		window.localStorage.removeItem(this.Q_VALUE_KEY);
 		window.localStorage.setItem(this.Q_VALUE_KEY, skillQueue.toString());
 		this.setQueue(skillQueue);
-		if (handler)
+		if(handler)
 			handler();
 	};
 
 	// add skill to queue
 	this.addSkillToQueue = function(skillId, handler) {
 		var q = this.getQueue();
-		if (q.indexOf(skillId) < 0) {
+		if(q.indexOf(skillId) < 0) {
 			q.push(skillId);
 			this.saveQueue(q, handler);
 		}
@@ -186,7 +186,7 @@ function GlitchQueue(playerTSID, localDb) {
 	this.removeSkillFromQueue = function(skillId, handler) {
 		var q = this.getQueue();
 		var idx = q.indexOf(skillId);
-		if (idx > -1)
+		if(idx > -1)
 			q.splice(idx, 1);
 		this.saveQueue(q, handler);
 	};
@@ -195,9 +195,9 @@ function GlitchQueue(playerTSID, localDb) {
 	this.doAvailableSkillsCache = function(api, handler) {
 		log("Renewing available skills cache.");
 		api.call("skills.listAvailable", { per_page: 1024 }, function(e) {
-			if (e.ok && e.skills) {
+			if(e.ok && e.skills) {
 				this.availableSkills = e.skills;
-				if (handler) handler(e.skills);
+				if(handler) handler(e.skills);
 			}
 		}.bind(this));
 	}
@@ -210,7 +210,7 @@ function GlitchQueue(playerTSID, localDb) {
 				api.call("skills.listLearned", {}, function(learned) {
 					if(learned.ok && learned.skills) {
 						this.unlearnedSkills = relativeComplement(learned.skills, all.items);
-						if(handler) handler(unlearnedSkills);
+						if(handler) handler(this.unlearnedSkills);
 					}
 				}.bind(this));
 		}.bind(this));
@@ -222,13 +222,13 @@ function GlitchQueue(playerTSID, localDb) {
 function QueueInterface() {
 	// [time] is in seconds.
 	function renewPollTimer(time) {
-		if (pollQTimer) window.clearTimeout(pollQTimer);
+		if(pollQTimer) window.clearTimeout(pollQTimer);
 		pollQTimer = window.setTimeout(pollJob, time * 1000);
 	}
 
 	// Set tool tip for skill currently being learnt
 	function setTooltipForCurrentLearning() {
-		if (typeof queue === 'undefined') return;
+		if(typeof queue === 'undefined') return;
 		var completeDate = new Date(currentSkillExpires * 1000);
 
 		$('.progress').attr('title', 'Finishing at '
@@ -243,7 +243,7 @@ function QueueInterface() {
 	var pollQTimer = 0;
 
 	var playerTSID = $('#nav-profile > a').attr('href').split("/")[2];
-	if (!playerTSID) return;
+	if(!playerTSID) return;
 
 	skillQueue = new GlitchQueue(playerTSID);
 	// Display the queue after creating both caches.
@@ -259,23 +259,23 @@ function QueueInterface() {
 	 * Updates UI progress bar for the skill being learnt
 	 */
 	function updateSkillQueueProgress(skillId) {
-		if (skillQueue.skillLearning[skillId]) {
+		if(skillQueue.skillLearning[skillId]) {
 			var skill = skillQueue.skillLearning[skillId];
 			var remaining = currentSkillExpires - time();
 			var percentCompleted = (100 - (remaining / skill.total_time * 100));
 			$('#' + skillId + '_skill_indicator').show();
 
-			if (remaining > 0) {
+			if(remaining > 0) {
 				var prefix = "";
-				if (remaining <= 5) prefix = 'OMG OMG OMG OMG ';
-				else if (remaining <= 10) prefix = 'Almost there! ';
-				else if (remaining <= 15) prefix = 'You can do it! ';
-				else if (remaining <= 20) prefix = 'Oh, so close... ';
+				if(remaining <= 5) prefix = 'OMG OMG OMG OMG ';
+				else if(remaining <= 10) prefix = 'Almost there! ';
+				else if(remaining <= 15) prefix = 'You can do it! ';
+				else if(remaining <= 20) prefix = 'Oh, so close... ';
 
 				$('#' + skillId + '_skill_remaining').html(prefix + format_sec(remaining));
 				$('#' + skillId + '_skill_indicator').width((100 - (remaining / skill.total_time * 100)) + '%');
 
-				if (uiQTimer) window.clearTimeout(uiQTimer);
+				if(uiQTimer) window.clearTimeout(uiQTimer);
 				uiQTimer = window.setTimeout(function() { updateSkillQueueProgress(skillId) }, 1000);	// update every 1 second
 			} else {
 				$('#' + skillId + '_skill_remaining').html('Done!');
@@ -291,8 +291,8 @@ function QueueInterface() {
 	 */
 	function displayQueuedItems() {
 		var q = skillQueue.getQueue().slice(0);
-		$.each(q, function(index, value) {
-			showSkillInQueue(value);
+		$.each(q, function(index, skill) {
+			showSkillInQueue(skill);
 		});
 	}
 
@@ -303,7 +303,7 @@ function QueueInterface() {
 		var skillQueueSelect = $('#skillQueueSelect');
 		skillQueueSelect.html("<option value=''>Choose!</option>");
 		for (skillId in skillQueue.unlearnedSkills) {
-			skill = skillQueue.unlearnedSkills[skillId];
+			var skill = skillQueue.unlearnedSkills[skillId];
 			skillQueueSelect.append($('<option style="border-top: dotted 1px #ccc;" value="' + skillId + '">' + skill.name + '</option>'));
 		}
 		$("#skillQueueDialogueCont").show();
@@ -321,27 +321,27 @@ function QueueInterface() {
 	 */
 	this.skillQueueAddBtn_onClick = function() {
 		var skillId = $("#skillQueueSelect").val();
-		if (skillId)
-			skillQueue.addSkillToQueue(skillId, function() { showSkillInQueue(skillId); } );
+		if(skillId)
+			skillQueue.addSkillToQueue(skillId, function() { showSkillInQueue(skillId); }.bind(this) );
 	}
 
 	/**
 	 * Click event handler for the Remove [X] skill link
 	 */
-	this.skillQRemoveLink_onClick = function(skillId) {
+	function skillQRemoveLink_onClick(skillId) {
 		skillQueue.removeSkillFromQueue(skillId, function() {
 			$('#' + skillId + '_skillqueue_item').fadeOut('fast', function() {
 				$('#' + skillId + '_skillqueue_item').remove();
 			});
 			var q = skillQueue.getQueue();
-			if (q.length == 0) pollJob();
+			if(q.length == 0) pollJob();
 		});
 	}
 
 	/**
 	 * Displays individual skill details in the sidebar queue
 	 */
-	this.showSkillInQueue = function(skillId) {
+	function showSkillInQueue(skillId) {
 		var skill, remaining;
 		if(skillQueue.availableSkills[skillId]) {
 			skill = skillQueue.availableSkills[skillId];
@@ -373,12 +373,12 @@ function QueueInterface() {
 	 */
 	function submitSkill(skillId, handler) {
 		api.call("skills.learn", { 'skill_id' : skillId }, function(e) {
-			if (e.ok) {
+			if(e.ok) {
 				skillQueue.skillLearning[skillId] = skillQueue.availableSkills[skillId];
-				if (uiQTimer) window.clearTimeout(uiQTimer);
+				if(uiQTimer) window.clearTimeout(uiQTimer);
 				uiQTimer = window.setTimeout(function() { updateSkillQueueProgress(skillId); }, 1000);
 			}
-			if (handler) handler(e);
+			if(handler) handler(e);
 		});
 	}
 
@@ -407,7 +407,7 @@ function QueueInterface() {
 
 		function trySkillSubmit(skillId) {
 			submitSkill(skillId, function(e) {	// handle submit skill sucess/failure
-				if (e.ok) {	// submitted successfully
+				if(e.ok) {	// submitted successfully
 					skillQueue.removeSkillFromQueue(skillId);
 					$('#' + skillId + '_skill_error').html('');
 					$('#' + skillId + '_skill_error').hide();
@@ -417,7 +417,7 @@ function QueueInterface() {
 				} else {
 					currentSkillExpires = 0;
 					var skillError = $('#' + skillId + '_skill_error');
-					if (e.error == "The game is disabled.") { // Argh game is disabled
+					if(e.error == "The game is disabled.") { // Argh game is disabled
 						log("Game is disabled. Checking again in " + (POLL_INTERVAL_DISABLED / 60) + " minutes.");
 						skillError.html('Game is disabled.');
 						renewPollTimer(POLL_INTERVAL_DISABLED);	// try again later
@@ -430,22 +430,22 @@ function QueueInterface() {
 			});	// end: submitSkill(q[0], function(e) {
 		}
 
-		if (q.length == 0) {
-			log("Nothing to be done.. polling again later");
+		if(q.length == 0) {
+			log("Nothing to be done.");
 			renewPollTimer(POLL_INTERVAL_DEFAULT);
 			return;
 		}
 
 		api_call("skills.listLearning", {}, function(e) {
-			if (!e.ok) { log("Oops, poll broke while trying to check learning. " + e.error); return; }
+			if(!e.ok) { log("Oops, poll broke while trying to check learning. " + e.error); return; }
 
 			var learned = false;
-			if (e.learning) {
+			if(e.learning) {
 				for (skillId in e.learning) {
 					// Another skill was selected outside of this script.
 					var skill = e.learning[skillId];
-					log("Skill " + skill.name + " selected outside of this script. Checking back in " + Math.round(remaining / 60) + " minutes.");
 					var remaining = skill.time_remaining;
+					log("Skill " + skill.name + " selected outside of this script. Checking back in " + Math.round(remaining / 60) + " minutes.");
 					currentSkillExpires = time() + remaining;
 					// Poll once the skill is done.
 					renewPollTimer(remaining);
@@ -473,7 +473,7 @@ function QueueInterface() {
 var queueInterface = {};
 
 $(document).ready(function() {
-	if (!window.localStorage) {
+	if(!window.localStorage) {
 		log('localStorage is not supported in this browser.');
 		return;
 	}
