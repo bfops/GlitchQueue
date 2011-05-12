@@ -219,10 +219,8 @@ function GlitchQueue(playerTSID, localDb) {
 	this.addSkillToQueue = function(skillId, handler) {
 		log("Adding " + this.unlearnedSkills[skillId].name + " to queue.");
 		var q = this.getQueue();
-		if(q.indexOf(skillId) < 0) {
-			q.push(skillId);
-			this.saveQueue(q, handler);
-		}
+		q.push(skillId);
+		this.saveQueue(q, handler);
 	};
 
 	// removes skill from queue
