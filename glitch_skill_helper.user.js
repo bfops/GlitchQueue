@@ -89,19 +89,6 @@ function UnitTestCollection() {
 			logTestResult(testName, true);
 		}
 
-		function test_addBadToQueue(testName) {
-			var api = new API;
-			api.setAPIReturn("skills.listAll", { ok : 1, items : { magic : magicSkill } });
-			api.setAPIReturn("skills.listAvailable", { ok : 1, items : { } });
-			api.setAPIReturn("skills.listLearning", { ok : 1, learning : {} });
-
-			var testQueue = new QueueInterface(api);
-			var magicSkill = { name : "Magic", total_time : 10, remaining_time : 10 };
-			testQueue.skillQueue.addSkillToQueue("magic", function(q) {
-				logTestResult(testName, q == []);
-			});
-		}
-
 		function test_addToQueue(testName) {
 			var api = new API;
 			api.setAPIReturn("skills.listAll", { ok : 1, items : { magic : magicSkill, magic2 : magic2Skill } });
@@ -132,8 +119,7 @@ function UnitTestCollection() {
 
 		var unittests = [
 			new UnitTest(test_apiReturns, "API wrapper return-hooking"),
-			new UnitTest(test_addToQueue, "Adding to queue"),
-			new UnitTest(test_addBadToQueue, "Adding unlearnable skill to queue")/*,
+			new UnitTest(test_addToQueue, "Adding to queue")/*,
 			new UnitTest(test_removeFromQueue, "Removing from queue"),
 			new UnitTest(test_unlearnedSkill, "Unlearned skill list"),
 			new UnitTest(test_skillLoadNoQueue, "Skill being learned on page load, no skill queue"),
@@ -231,7 +217,7 @@ function GlitchQueue(playerTSID, localDb) {
 
 	// add skill to queue
 	this.addSkillToQueue = function(skillId, handler) {
-		log("Adding " + this.availableSkills[skillId].name + " to queue.");
+		log("Adding " + this.unlearnedSkills[skillId].name + " to queue.");
 		var q = this.getQueue();
 		if(q.indexOf(skillId) < 0) {
 			q.push(skillId);
@@ -241,10 +227,9 @@ function GlitchQueue(playerTSID, localDb) {
 
 	// removes skill from queue
 	this.removeSkillFromQueue = function(skillId, handler) {
+		log("Removing " + this.unlearnedSkills[skillId].name + " from queue.");
 		var q = this.getQueue();
-		var idx = q.indexOf(skillId);
-		if(idx > -1)
-			q.splice(idx, 1);
+		q.splice(q.indexOf(skillId), 1);
 		this.saveQueue(q, handler);
 	};
 
