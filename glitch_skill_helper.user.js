@@ -90,15 +90,16 @@ function UnitTestCollection() {
 		}
 
 		function test_addToQueue(testName) {
+			var magicSkill = { name : "Magic", total_time : 10, remaining_time : 10 };
+			var magic2Skill = magicSkill;
+			magic2Skill.name = "Magic2";
+
 			var api = new API;
 			api.setAPIReturn("skills.listAll", { ok : 1, items : { magic : magicSkill, magic2 : magic2Skill } });
 			api.setAPIReturn("skills.listAvailable", { ok : 1, skills : { magic : magicSkill , magic2 : magic2Skill } });
 			api.setAPIReturn("skills.listLearning", { ok : 1, learning : {} });
 
 			var testQueue = new QueueInterface(api);
-			var magicSkill = { name : "Magic", total_time : 10, remaining_time : 10 };
-			var magic2Skill = magicSkill;
-			magic2Skill.name = "Magic2";
 
 			window.setTimeout(function() {
 				testQueue.skillQueue.addSkillToQueue("magic", function(q1) {
