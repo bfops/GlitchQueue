@@ -92,7 +92,7 @@ function UnitTestCollection() {
 		function test_addToQueue(testName) {
 			var api = new API;
 			api.setAPIReturn("skills.listAll", { ok : 1, items : { magic : magicSkill, magic2 : magic2Skill } });
-			api.setAPIReturn("skills.listAvailable", { ok : 1, items : { magic : magicSkill , magic2 : magic2Skill } });
+			api.setAPIReturn("skills.listAvailable", { ok : 1, skills : { magic : magicSkill , magic2 : magic2Skill } });
 			api.setAPIReturn("skills.listLearning", { ok : 1, learning : {} });
 
 			var testQueue = new QueueInterface(api);
@@ -105,7 +105,7 @@ function UnitTestCollection() {
 				testQueue.skillQueue.addSkillToQueue("magic2", function(q2) {
 					logTestResult(testName, q1 == [magicSkill] && q2 == [magicSkill, magic2Skill]);
 				});});
-			}.bind(this), 2000);
+			}.bind(this), 1000);
 		}
 
 		var testCompletionNumber = 0;
