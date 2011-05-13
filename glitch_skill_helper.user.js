@@ -505,7 +505,8 @@ function QueueInterface(api, storageKey) {
 	this.skillQueue = new GlitchQueue(storageKey);
 	// Display the queue after creating both caches.
 	this.skillQueue.doUnlearnedSkillsCache(api, function(x) {
-	this.skillQueue.doAvailableSkillsCache(api, function(x) { this.displayQueuedItems(); }.bind(this));}.bind(this));
+	this.skillQueue.doAvailableSkillsCache(api, function(x) { this.displayQueuedItems(); }.bind(this));
+	}.bind(this));
 
 	$('body').data("glitchq", this.skillQueue.getSavedQueue());
 
