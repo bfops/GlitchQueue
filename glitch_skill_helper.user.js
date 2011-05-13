@@ -207,14 +207,14 @@ function log(msg) {
 /**
  *	Queue class encapsulates queue handling logic
  */
-function GlitchQueue(queueStorageKey, storage) {
+function GlitchQueue(queueStorageKey) {
 	this.availableSkills = {};
 	this.unlearnedSkills = {};
 
 	// explode queue array from storage
 	this.getSavedQueue = function() {
-		if(storage.get(queueStorageKey))
-			return storage.get(queueStorageKey).split(",");
+		if(queueStorageKey.get())
+			return queueStorageKey.get().split(",");
 		return [];
 	};
 
@@ -224,8 +224,8 @@ function GlitchQueue(queueStorageKey, storage) {
 
 	// persist queue array to storage
 	this.saveQueue = function(skillQueue, handler) {
-		storage.remove(queueStorageKey);
-		storage.set(queueStorageKey, skillQueue.toString());
+		queueStorageKey.remove();
+		queueStorageKey.set(skillQueue.toString());
 		this.setQueue(skillQueue);
 		if(handler)
 			handler();
@@ -275,7 +275,7 @@ function GlitchQueue(queueStorageKey, storage) {
 }	// end: GlitchQueue()
 
 // Handles the queue's interactions with the user, the webpage, and the API.
-function QueueInterface(playerTSID, api, storage) {
+function QueueInterface(api, storageKey) {
 	// [time] is in seconds.
 	this.renewPollTimer = function(time) {
 		if(pollQTimer != 0) window.clearTimeout(pollQTimer);
@@ -502,7 +502,7 @@ function QueueInterface(playerTSID, api, storage) {
 	this.uiQTimer = 0;
 	this.pollQTimer = 0;
 
-	this.skillQueue = new GlitchQueue("glitch_SkillQueue_" + playerTSID, storage);
+	this.skillQueue = new GlitchQueue(storageKey);
 	// Display the queue after creating both caches.
 	this.skillQueue.doUnlearnedSkillsCache(api, function(x) {
 	this.skillQueue.doAvailableSkillsCache(api, function(x) { this.displayQueuedItems(); }.bind(this));}.bind(this));
@@ -514,21 +514,23 @@ function QueueInterface(playerTSID, api, storage) {
 } // end: QueueInterface()
 
 $(document).ready(function() {
-	if(!window.localStorage) {
-		log('localStorage is not supported in this browser.');
-		return;
-	}
-
 	if(unittest) {
 		log("In unit testing mode.");
 		var unittests = new UnitTestCollection;
 	} else {
-		log("Ding! Script started.");
+		if(!window.localStorage) {
+			log('localStorage is not supported in this browser.');
+			return;
+		}
 
 		var playerTSID = $('#nav-profile > a').attr('href').split("/")[2];
-		if(!playerTSID) return;
+		if(!playerTSID) {
+			log("Could not get player's TSID.");
+			return;
+		}
 
-		var queueInterface = new QueueInterface(playerTSID, new API, window.localStorage);
+		log("Ding! Script started.");
+		var queueInterface = new QueueInterface(new API, new StorageKey(window.localStorage, "glitch_SkillQueue_" + playerTSID));
 		setUpGUI(queueInterface);
 	}
 });
