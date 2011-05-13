@@ -29,6 +29,31 @@ function relativeComplement(a, b) {
 	return ret;
 }
 
+// Returns true iff all of [a]'s members equal [b]'s corresponding members.
+function objEquals(a, b) {
+	for (x in b)
+		if(typeof(a[x]) == "undefined")
+			return false;
+
+	for (x in a) {
+		if(typeof(b[x]) == "undefined")
+			return false;
+
+		if(a[x]) {
+			if(typeof(a[x]) == "object") {
+				if(typeof(b[x]) != "object" || !objEquals(a[x], b[x]))
+					return false;
+			}
+			else if(a[x] !== b[x])
+				return false;
+		}
+		else if(b[x])
+			return false;
+	}
+
+	return true;
+}
+
 if(GM_registerMenuCommand)
 	GM_registerMenuCommand("About Glitch Skill Queuer", function() {
 		alert("ping's skill queuer for Glitch, modified by RobotGymnast.");
@@ -90,6 +115,17 @@ function UnitTestCollection() {
 			}
 		}
 
+
+		function test_objEquals(testName) {
+			var obj1 = { x : 5, y : "hall", z : { a : 'j', b : 6.2 } };
+			var obj2 = { x : 5, y : "hall", z : { a : 'j', b : 6.2 } };
+			var obj3 = { x : "5", y : "hall", z : { a : 'j', b : 6.2 } };
+			var obj4 = { x : 5, y : "hall", z : {} };
+			var obj5 = { x : 5, y : "hall", z : { a : 'j', b : 6.2, c : "~~~~" } };
+			var obj6 = { x : 5, y : "hall", z : { a : 'j' } };
+
+			logTestResult(testName, objEquals(obj1, obj2) && !objEquals(obj1, obj3) && !objEquals(obj1, obj4) && !objEquals(obj1, obj5) && !objEquals(obj1, obj6));
+		}
 		function test_apiReturns(testName) {
 			var testAPI = new API;
 			var desired = { "purpleDragon" : { "ofcourse" : 1, "whynot?" : { "excellent" : 12, "12" : "hello" } } };
@@ -137,6 +173,7 @@ function UnitTestCollection() {
 		}
 
 		var unittests = [
+			new UnitTest(test_objEquals, "Object equality"),
 			new UnitTest(test_apiReturns, "API wrapper return-hooking"),
 			new UnitTest(test_addToQueue, "Adding to queue")/*,
 			new UnitTest(test_removeFromQueue, "Removing from queue"),
