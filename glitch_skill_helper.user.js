@@ -64,6 +64,36 @@ function API() {
 	}
 }
 
+function LocalStorage(useWindowStorage) {
+	if(useWindowStorage) {
+		this.get = function(key) {
+			return window.localStorage.getItem(key);
+		}
+
+		this.remove = function(key) {
+			window.localStorage.removeItem(key);
+		}
+
+		this.set = function(key, value) {
+			window.localStorage.setItem(key, value);
+		}
+	} else {
+		var storedItems = {};
+
+		this.get = function(key) {
+			return storedItems[key];
+		}
+
+		this.remove = function(key) {
+			storedItems[key] = undefined;
+		}
+
+		this.set = function(key, value) {
+			storedItems[key] = value;
+		}
+	}
+}
+
 function UnitTestCollection() {
 	try {
 		function UnitTest(func, name) {
@@ -190,16 +220,18 @@ function log(msg) {
 /**
  *	Queue class encapsulates queue handling logic
  */
-function GlitchQueue(playerTSID, localDb) {
+function GlitchQueue(playerTSID, storage) {
 	this.Q_VALUE_KEY = "glitch_SkillQueue_" + this.playerTSID;	// storage key name
 	this.availableSkills = {};
 	this.unlearnedSkills = {};
 
+	if(!storage)
+		storage = new LocalStorage(true);
 
 	// explode queue array from storage
 	this.getSavedQueue = function() {
-		if(window.localStorage.getItem(this.Q_VALUE_KEY))
-			return window.localStorage.getItem(this.Q_VALUE_KEY).split(",");
+		if(storage.get(this.Q_VALUE_KEY))
+			return storage.get(this.Q_VALUE_KEY).split(",");
 		return [];
 	};
 
@@ -209,8 +241,8 @@ function GlitchQueue(playerTSID, localDb) {
 
 	// persist queue array to storage
 	this.saveQueue = function(skillQueue, handler) {
-		window.localStorage.removeItem(this.Q_VALUE_KEY);
-		window.localStorage.setItem(this.Q_VALUE_KEY, skillQueue.toString());
+		storage.remove(this.Q_VALUE_KEY);
+		storage.set(this.Q_VALUE_KEY, skillQueue.toString());
 		this.setQueue(skillQueue);
 		if(handler)
 			handler();
