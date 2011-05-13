@@ -108,13 +108,13 @@ function UnitTestCollection() {
 			var numberReturned = 0;
 			var totalNumber = 0;
 
-				for (callName in desired) {
-					testAPI.setAPIReturn(callName, desired[callName]);
-					testAPI.call(callName, function(ret) {
-						if(ret != desired[callName])
-							logTestResult(testName, false);
-					}.bind(this));
-				}
+			for (callName in desired) {
+				testAPI.setAPIReturn(callName, desired[callName]);
+				testAPI.call(callName, function(ret) {
+					if(ret != desired[callName])
+						logTestResult(testName, false);
+				}.bind(this));
+			}
 
 			logTestResult(testName, true);
 		}
