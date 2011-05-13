@@ -96,7 +96,7 @@ function UnitTestCollection() {
 
 			var api = new API;
 			api.setAPIReturn("skills.listAll", { ok : 1, items : { magic : magicSkill, magic2 : magic2Skill } });
-			api.setAPIReturn("skills.listAvailable", { ok : 1, skills : { magic : magicSkill , magic2 : magic2Skill } });
+			api.setAPIReturn("skills.listAvailable", { ok : 1, skills : { magic : magicSkill, magic2 : magic2Skill } });
 			api.setAPIReturn("skills.listLearning", { ok : 1, learning : {} });
 
 			var testQueue = new QueueInterface(api);
@@ -106,7 +106,7 @@ function UnitTestCollection() {
 				testQueue.skillQueue.addSkillToQueue("magic2", function(q2) {
 					logTestResult(testName, q1 == [magicSkill] && q2 == [magicSkill, magic2Skill]);
 				});});
-			}.bind(this), 1000);
+			}, 1000);
 		}
 
 		var testCompletionNumber = 0;
@@ -194,7 +194,7 @@ function GlitchQueue(playerTSID, localDb) {
 	this.Q_VALUE_KEY = "glitch_SkillQueue_" + this.playerTSID;	// storage key name
 	this.availableSkills = {};
 	this.unlearnedSkills = {};
-	this.db = localDb;
+
 
 	// explode queue array from storage
 	this.getSavedQueue = function() {
