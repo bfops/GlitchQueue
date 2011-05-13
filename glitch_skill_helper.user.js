@@ -22,7 +22,7 @@ var POLL_INTERVAL_ERROR = 60;	// poll interval when unknown error is encountered
 function relativeComplement(a, b) {
 	var ret = {};
 
-	for (x in a)
+	for(x in a)
 		if(typeof(b[x]) == "undefined")
 			ret[x] = a[x];
 
@@ -31,11 +31,11 @@ function relativeComplement(a, b) {
 
 // Returns true iff all of [a]'s members equal [b]'s corresponding members.
 function objEquals(a, b) {
-	for (x in b)
+	for(x in b)
 		if(typeof(a[x]) == "undefined")
 			return false;
 
-	for (x in a) {
+	for(x in a) {
 		if(typeof(b[x]) == "undefined")
 			return false;
 
@@ -161,13 +161,14 @@ function UnitTestCollection() {
 
 			logTestResult(testName, objEquals(obj1, obj2) && !objEquals(obj1, obj3) && !objEquals(obj1, obj4) && !objEquals(obj1, obj5) && !objEquals(obj1, obj6));
 		}
+
 		function test_apiReturns(testName) {
 			var testAPI = new API;
 			var desired = { "purpleDragon" : { "ofcourse" : 1, "whynot?" : { "excellent" : 12, "12" : "hello" } } };
 			var numberReturned = 0;
 			var totalNumber = 0;
 
-			for (callName in desired) {
+			for(callName in desired) {
 				testAPI.setAPIReturn(callName, desired[callName]);
 				testAPI.call(callName, {}, function(ret) {
 					if(ret != desired[callName])
@@ -305,6 +306,7 @@ function GlitchQueue(queueStorageKey) {
 
 	// add skill to queue
 	this.addSkillToQueue = function(skillId, handler) {
+		for(x in this.unlearnedSkills)
 		log("Adding " + this.unlearnedSkills[skillId].name + " to queue.");
 		var q = this.getQueue();
 		q.push(skillId);
@@ -414,7 +416,7 @@ function QueueInterface(api, storageKey) {
 	this.showAddQDialogue = function() {
 		var skillQueueSelect = $('#skillQueueSelect');
 		skillQueueSelect.html("<option value=''>Choose!</option>");
-		for (skillId in this.skillQueue.unlearnedSkills) {
+		for(skillId in this.skillQueue.unlearnedSkills) {
 			var skill = this.skillQueue.unlearnedSkills[skillId];
 			skillQueueSelect.append($('<option style="border-top: dotted 1px #ccc;" value="' + skillId + '">' + skill.name + '</option>'));
 		}
@@ -550,7 +552,7 @@ function QueueInterface(api, storageKey) {
 			if(!e.ok) { log("Oops, poll broke while trying to check learning. " + e.error); return; }
 
 			if(e.learning) {
-				for (skillId in e.learning) {
+				for(skillId in e.learning) {
 					// Another skill was selected outside of this script.
 					var skill = e.learning[skillId];
 					var remaining = skill.time_remaining;
