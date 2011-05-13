@@ -107,6 +107,23 @@ function LocalStorage() {
 	var storedItems = {};
 }
 
+function StorageKey(storage, keyName) {
+	this.get = function() {
+		return this.storage.getItem(this.keyName);
+	}
+
+	this.set = function(value) {
+		this.storage.setItem(this.keyName, value);
+	}
+
+	this.remove = function() {
+		this.storage.removeItem(this.keyName);
+	}
+
+	this.storage = storage;
+	this.keyName = keyName;
+}
+
 function UnitTestCollection() {
 	try {
 		function UnitTest(func, name) {
@@ -153,7 +170,7 @@ function UnitTestCollection() {
 			api.setAPIReturn("skills.listAvailable", { ok : 1, skills : { magic : magicSkill, magic2 : magic2Skill } });
 			api.setAPIReturn("skills.listLearning", { ok : 1, learning : {} });
 
-			var testQueue = new QueueInterface(api, new LocalStorage);
+			var testQueue = new QueueInterface(api, new StorageKey(new LocalStorage, "x"));
 
 			window.setTimeout(function() {
 				testQueue.skillQueue.addSkillToQueue("magic", function(q1) {
