@@ -500,9 +500,6 @@ function QueueInterface(api, storage) {
 
 	} // end: pollJob()
 
-	if(!api)
-		api = new API;
-
 	this.uiQTimer = 0;
 	this.pollQTimer = 0;
 
