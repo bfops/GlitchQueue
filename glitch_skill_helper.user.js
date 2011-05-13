@@ -49,7 +49,6 @@ if(unsafeWindow) {
 }
 
 function API() {
-	var apiReturns = {};
 	this.call = function(callName, args, handler) {
 		if(apiReturns && apiReturns[callName]) {
 			log("API call " + callName + " overriden.");
@@ -62,12 +61,12 @@ function API() {
 	this.setAPIReturn = function(apiCallName, apiReturn) {
 		apiReturns[apiCallName] = apiReturn;
 	}
+
+	var apiReturns = {};
 }
 
 // Temporary storage of items, with the same interface as window.localStorage.
 function LocalStorage() {
-	var storedItems = {};
-
 	this.getItem = function(key) {
 		return storedItems[key];
 	}
@@ -79,6 +78,8 @@ function LocalStorage() {
 	this.setItem = function(key, value) {
 		storedItems[key] = value;
 	}
+
+	var storedItems = {};
 }
 
 function UnitTestCollection() {
@@ -97,7 +98,7 @@ function UnitTestCollection() {
 
 			for (callName in desired) {
 				testAPI.setAPIReturn(callName, desired[callName]);
-				testAPI.call(callName, function(ret) {
+				testAPI.call(callName, {}, function(ret) {
 					if(ret != desired[callName])
 						logTestResult(testName, false);
 				}.bind(this));
@@ -107,7 +108,7 @@ function UnitTestCollection() {
 		}
 
 		function test_addToQueue(testName) {
-			var magicSkill = { name : "Magic", total_time : 10, remaining_time : 10 };
+			var magicSkill = { name : "Magic", total_time : 10, time_remaining : 10 };
 			var magic2Skill = magicSkill;
 			magic2Skill.name = "Magic2";
 
@@ -208,13 +209,10 @@ function log(msg) {
  *	Queue class encapsulates queue handling logic
  */
 function GlitchQueue(queueStorageKey) {
-	this.availableSkills = {};
-	this.unlearnedSkills = {};
-
 	// explode queue array from storage
 	this.getSavedQueue = function() {
-		if(queueStorageKey.get())
-			return queueStorageKey.get().split(",");
+		if(this.queueStorageKey.get())
+			return this.queueStorageKey.get().split(",");
 		return [];
 	};
 
@@ -224,8 +222,8 @@ function GlitchQueue(queueStorageKey) {
 
 	// persist queue array to storage
 	this.saveQueue = function(skillQueue, handler) {
-		queueStorageKey.remove();
-		queueStorageKey.set(skillQueue.toString());
+		this.queueStorageKey.remove();
+		this.queueStorageKey.set(skillQueue.toString());
 		this.setQueue(skillQueue);
 		if(handler)
 			handler();
@@ -272,14 +270,18 @@ function GlitchQueue(queueStorageKey) {
 		}.bind(this));
 	}
 
+	this.queueStorageKey = queueStorageKey;
+	this.availableSkills = {};
+	this.unlearnedSkills = {};
+
 }	// end: GlitchQueue()
 
 // Handles the queue's interactions with the user, the webpage, and the API.
 function QueueInterface(api, storageKey) {
 	// [time] is in seconds.
 	this.renewPollTimer = function(time) {
-		if(pollQTimer != 0) window.clearTimeout(pollQTimer);
-		pollQTimer = window.setTimeout(function() { this.pollJob(); }.bind(this), time * 1000);
+		if(this.pollQTimer != 0) window.clearTimeout(this.pollQTimer);
+		this.pollQTimer = window.setTimeout(function() { this.pollJob(); }.bind(this), time * 1000);
 	}
 
 	// Set tool tip for skill currently being learnt
@@ -360,8 +362,8 @@ function QueueInterface(api, storageKey) {
 		if(skillId) {
 			this.skillQueue.addSkillToQueue(skillId, function() { showSkillInQueue(skillId); }.bind(this));
 
-			if(pollQTimer == 0)
-				renewPollTimer(1);
+			if(this.pollQTimer == 0)
+				this.renewPollTimer(1);
 		}
 	}
 
@@ -412,7 +414,7 @@ function QueueInterface(api, storageKey) {
 	 * Submit skill for learning
 	 */
 	this.submitSkill = function(skillId, handler) {
-		api.call("skills.learn", { 'skill_id' : skillId }, function(e) {
+		this.api.call("skills.learn", { 'skill_id' : skillId }, function(e) {
 			if(e.ok) {
 				this.skillQueue.skillLearning[skillId] = this.skillQueue.availableSkills[skillId];
 				if(uiQTimer) window.clearTimeout(uiQTimer);
@@ -453,24 +455,24 @@ function QueueInterface(api, storageKey) {
 					$('#' + skillId + '_skill_error').hide();
 					$('#' + skillId + '_skillRemoveLink').hide();
 					currentSkillExpires = this.skillQueue.availableSkills[skillId].time_remaining + time();
-					renewPollTimer(this.skillQueue.availableSkills[skillId].time_remaining);
+					this.renewPollTimer(this.skillQueue.availableSkills[skillId].time_remaining);
 				} else {
 					currentSkillExpires = 0;
 					var skillError = $('#' + skillId + '_skill_error');
 					if(e.error == "The game is disabled.") { // Argh game is disabled
 						log("Game is disabled. Checking again in " + (POLL_INTERVAL_DISABLED / 60) + " minutes.");
 						skillError.html('Game is disabled.');
-						renewPollTimer(POLL_INTERVAL_DISABLED);	// try again later
+						this.renewPollTimer(POLL_INTERVAL_DISABLED);	// try again later
 					} else {
 						skillError.html('Error: ' + e.error);
-						renewPollTimer(POLL_INTERVAL_ERROR);	// try again later for unknown error
+						this.renewPollTimer(POLL_INTERVAL_ERROR);	// try again later for unknown error
 	        			}
 					skillError.fadeIn('slow');
 				}
 			}.bind(this));	// end: submitSkill(q[0], function(e) {
 		}
 
-		api.call("skills.listLearning", {}, function(e) {
+		this.api.call("skills.listLearning", {}, function(e) {
 			if(!e.ok) { log("Oops, poll broke while trying to check learning. " + e.error); return; }
 
 			if(e.learning) {
@@ -481,7 +483,7 @@ function QueueInterface(api, storageKey) {
 					log("Skill " + skill.name + " selected outside of this script. Checking back in " + Math.round(remaining / 60) + " minutes.");
 					currentSkillExpires = time() + remaining;
 					// Poll once the skill is done.
-					renewPollTimer(remaining);
+					this.renewPollTimer(remaining);
 
 					return;
 				}
@@ -490,22 +492,25 @@ function QueueInterface(api, storageKey) {
 			log("No skills are being learned.");
 
 			// Refresh both caches.
-			this.skillQueue.doUnlearnedSkillsCache(api);
-			this.skillQueue.doAvailableSkillsCache(api, function(x) {
+			this.skillQueue.doUnlearnedSkillsCache(this.api);
+			this.skillQueue.doAvailableSkillsCache(this.api, function(x) {
 				if(q.length > 0 && rotateQueueToLearnableSkill()) trySkillSubmit(q[0]);
 			}.bind(this));
 
-		}.bind(this));	// end: api.call("skills.listLearning", {}, function(e) {
+		}.bind(this));	// end: this.api.call("skills.listLearning", {}, function(e) {
 
 	} // end: pollJob()
+
+	this.api = api;
+	this.storageKey = storageKey;
 
 	this.uiQTimer = 0;
 	this.pollQTimer = 0;
 
-	this.skillQueue = new GlitchQueue(storageKey);
+	this.skillQueue = new GlitchQueue(this.storageKey);
 	// Display the queue after creating both caches.
-	this.skillQueue.doUnlearnedSkillsCache(api, function(x) {
-	this.skillQueue.doAvailableSkillsCache(api, function(x) { this.displayQueuedItems(); }.bind(this));
+	this.skillQueue.doUnlearnedSkillsCache(this.api, function(x) {
+	this.skillQueue.doAvailableSkillsCache(this.api, function(x) { this.displayQueuedItems(); }.bind(this));
 	}.bind(this));
 
 	$('body').data("glitchq", this.skillQueue.getSavedQueue());
