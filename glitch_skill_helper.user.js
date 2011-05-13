@@ -18,13 +18,13 @@ var POLL_INTERVAL_ERROR = 60;	// poll interval when unknown error is encountered
 // ------------------------ DO NOT EDIT FROM HERE ON ------------------------
 // **************************************************************************
 
-// Returns [b] \ [a] (i.e. all elements in [b] which are not in [a]).
+// Returns [a] \ [b] (i.e. all elements in [a] which are not in [b]).
 function relativeComplement(a, b) {
 	var ret = {};
 
-	for (x in b)
-		if(!a[x])
-			ret[x] = b[x];
+	for (x in a)
+		if(typeof(b[x]) == "undefined")
+			ret[x] = a[x];
 
 	return ret;
 }
@@ -263,7 +263,7 @@ function GlitchQueue(queueStorageKey) {
 			if(all.ok && all.items)
 				api.call("skills.listLearned", {}, function(learned) {
 					if(learned.ok && learned.skills) {
-						this.unlearnedSkills = relativeComplement(learned.skills, all.items);
+						this.unlearnedSkills = relativeComplement(all.items, learned.skills);
 						if(handler) handler(this.unlearnedSkills);
 					}
 				}.bind(this));
