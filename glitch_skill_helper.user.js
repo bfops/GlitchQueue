@@ -132,7 +132,7 @@ function UnitTestCollection() {
 			log("Test '" + testName + "' " + (result ? "succeeded" : "failed") + ".");
 
 			if(++testCompletionNumber == unittests.length)
-				log("Done unit tests.");
+				log("Done unit testing.");
 		}
 
 		var unittests = [
@@ -169,7 +169,7 @@ if(GM_addStyle) {
 	GM_addStyle('.skillError { border-left: 3px solid #DD8888; color: #DD8888; font-size: 11px; font-style: italic; margin-left: 2px; margin-bottom: 2px; padding: 0 3px 0 3px; display: none; }');
 }
 
-function setUpGUI() {
+function setUpGUI(queueInterface) {
 	var skillQueueSelect = $('<select style="margin-right: 10px; margin: left: 10px;" id="skillQueueSelect"></select>');
 	var skillQueueDialogueCont = $('<div class="dialog" id="skillQueueDialogueCont"></div>');
 	var skillQueueDialogue = $('<div class="dialog-inner" id="skillQueueDialogue">'
@@ -207,15 +207,14 @@ function log(msg) {
 /**
  *	Queue class encapsulates queue handling logic
  */
-function GlitchQueue(playerTSID, storage) {
-	this.Q_VALUE_KEY = "glitch_SkillQueue_" + this.playerTSID;	// storage key name
+function GlitchQueue(queueStorageKey, storage) {
 	this.availableSkills = {};
 	this.unlearnedSkills = {};
 
 	// explode queue array from storage
 	this.getSavedQueue = function() {
-		if(storage.get(this.Q_VALUE_KEY))
-			return storage.get(this.Q_VALUE_KEY).split(",");
+		if(storage.get(queueStorageKey))
+			return storage.get(queueStorageKey).split(",");
 		return [];
 	};
 
@@ -225,8 +224,8 @@ function GlitchQueue(playerTSID, storage) {
 
 	// persist queue array to storage
 	this.saveQueue = function(skillQueue, handler) {
-		storage.remove(this.Q_VALUE_KEY);
-		storage.set(this.Q_VALUE_KEY, skillQueue.toString());
+		storage.remove(queueStorageKey);
+		storage.set(queueStorageKey, skillQueue.toString());
 		this.setQueue(skillQueue);
 		if(handler)
 			handler();
@@ -276,7 +275,7 @@ function GlitchQueue(playerTSID, storage) {
 }	// end: GlitchQueue()
 
 // Handles the queue's interactions with the user, the webpage, and the API.
-function QueueInterface(api, storage) {
+function QueueInterface(playerTSID, api, storage) {
 	// [time] is in seconds.
 	this.renewPollTimer = function(time) {
 		if(pollQTimer != 0) window.clearTimeout(pollQTimer);
@@ -503,10 +502,7 @@ function QueueInterface(api, storage) {
 	this.uiQTimer = 0;
 	this.pollQTimer = 0;
 
-	this.playerTSID = $('#nav-profile > a').attr('href').split("/")[2];
-	if(!this.playerTSID) return;
-
-	this.skillQueue = new GlitchQueue(this.playerTSID, storage);
+	this.skillQueue = new GlitchQueue("glitch_SkillQueue_" + playerTSID, storage);
 	// Display the queue after creating both caches.
 	this.skillQueue.doUnlearnedSkillsCache(api, function(x) {
 	this.skillQueue.doAvailableSkillsCache(api, function(x) { this.displayQueuedItems(); }.bind(this));}.bind(this));
@@ -517,21 +513,23 @@ function QueueInterface(api, storage) {
 
 } // end: QueueInterface()
 
-var queueInterface = {};
-
 $(document).ready(function() {
 	if(!window.localStorage) {
 		log('localStorage is not supported in this browser.');
 		return;
 	}
 
-	setUpGUI();
-
 	if(unittest) {
 		log("In unit testing mode.");
 		var unittests = new UnitTestCollection;
 	} else {
 		log("Ding! Script started.");
-		queueInterface = new QueueInterface(new API, window.localStorage);
+
+		var playerTSID = $('#nav-profile > a').attr('href').split("/")[2];
+		if(!playerTSID) return;
+
+		var queueInterface = new QueueInterface(playerTSID, new API, window.localStorage);
+		setUpGUI(queueInterface);
 	}
 });
+
