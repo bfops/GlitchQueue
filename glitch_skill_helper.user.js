@@ -470,7 +470,7 @@ function QueueInterface(api, storageKey) {
 			}.bind(this));	// end: submitSkill(q[0], function(e) {
 		}
 
-		api_call("skills.listLearning", {}, function(e) {
+		api.call("skills.listLearning", {}, function(e) {
 			if(!e.ok) { log("Oops, poll broke while trying to check learning. " + e.error); return; }
 
 			if(e.learning) {
