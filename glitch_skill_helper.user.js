@@ -132,6 +132,24 @@ function UnitTestCollection() {
 			}
 		}
 
+		function test_relativeComplement(testName) {
+			var obj1 = { hello : "blah", goodbye : "goodbye", bonjour : "asdf", salut : "qwerty", salve : "vale" };
+			var obj2 = { uno : "1", no : "0", re : "2", trois : "3", hello : "tyu", bonjour : "asdf", goodbye : "au revoir" };
+
+			logTestResult(testName, objEquals(relativeComplement(obj2, obj1), { uno : "1", no : "0", re : "2", trois : "3" }));
+		}
+
+		function test_localStorage(testName) {
+			var storage = new LocalStorage;
+			storage.setItem("brush", 5);
+			storage.setItem("hellSpawn__!!", "RobotGymnast");
+			storage.setItem("Pokemon", "Digimon?");
+			var storageKey = new StorageKey(storage, "brush");
+			var removeable = new StorageKey(storage, "Pokemon");
+			removeable.remove();
+
+			logTestResult(testName, storageKey.get() == 5 && storage.getItem("hellSpawn__!!") == "RobotGymnast" && typeof(storage.getItem("Pokemon")) == "undefined");
+		}
 
 		function test_objEquals(testName) {
 			var obj1 = { x : 5, y : "hall", z : { a : 'j', b : 6.2 } };
@@ -190,6 +208,8 @@ function UnitTestCollection() {
 		}
 
 		var unittests = [
+			new UnitTest(test_relativeComplement, "Relative complement function"),
+			new UnitTest(test_localStorage, "Local storage"),
 			new UnitTest(test_objEquals, "Object equality"),
 			new UnitTest(test_apiReturns, "API wrapper return-hooking"),
 			new UnitTest(test_addToQueue, "Adding to queue")/*,
