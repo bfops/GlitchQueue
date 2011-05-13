@@ -64,33 +64,20 @@ function API() {
 	}
 }
 
-function LocalStorage(useWindowStorage) {
-	if(useWindowStorage) {
-		this.get = function(key) {
-			return window.localStorage.getItem(key);
-		}
+// Temporary storage of items, with the same interface as window.localStorage.
+function LocalStorage() {
+	var storedItems = {};
 
-		this.remove = function(key) {
-			window.localStorage.removeItem(key);
-		}
+	this.getItem = function(key) {
+		return storedItems[key];
+	}
 
-		this.set = function(key, value) {
-			window.localStorage.setItem(key, value);
-		}
-	} else {
-		var storedItems = {};
+	this.removeItem = function(key) {
+		storedItems[key] = undefined;
+	}
 
-		this.get = function(key) {
-			return storedItems[key];
-		}
-
-		this.remove = function(key) {
-			storedItems[key] = undefined;
-		}
-
-		this.set = function(key, value) {
-			storedItems[key] = value;
-		}
+	this.setItem = function(key, value) {
+		storedItems[key] = value;
 	}
 }
 
@@ -129,7 +116,7 @@ function UnitTestCollection() {
 			api.setAPIReturn("skills.listAvailable", { ok : 1, skills : { magic : magicSkill, magic2 : magic2Skill } });
 			api.setAPIReturn("skills.listLearning", { ok : 1, learning : {} });
 
-			var testQueue = new QueueInterface(api);
+			var testQueue = new QueueInterface(api, new LocalStorage);
 
 			window.setTimeout(function() {
 				testQueue.skillQueue.addSkillToQueue("magic", function(q1) {
@@ -225,9 +212,6 @@ function GlitchQueue(playerTSID, storage) {
 	this.availableSkills = {};
 	this.unlearnedSkills = {};
 
-	if(!storage)
-		storage = new LocalStorage(true);
-
 	// explode queue array from storage
 	this.getSavedQueue = function() {
 		if(storage.get(this.Q_VALUE_KEY))
@@ -292,7 +276,7 @@ function GlitchQueue(playerTSID, storage) {
 }	// end: GlitchQueue()
 
 // Handles the queue's interactions with the user, the webpage, and the API.
-function QueueInterface(api) {
+function QueueInterface(api, storage) {
 	// [time] is in seconds.
 	this.renewPollTimer = function(time) {
 		if(pollQTimer != 0) window.clearTimeout(pollQTimer);
@@ -525,7 +509,7 @@ function QueueInterface(api) {
 	this.playerTSID = $('#nav-profile > a').attr('href').split("/")[2];
 	if(!this.playerTSID) return;
 
-	this.skillQueue = new GlitchQueue(this.playerTSID);
+	this.skillQueue = new GlitchQueue(this.playerTSID, storage);
 	// Display the queue after creating both caches.
 	this.skillQueue.doUnlearnedSkillsCache(api, function(x) {
 	this.skillQueue.doAvailableSkillsCache(api, function(x) { this.displayQueuedItems(); }.bind(this));}.bind(this));
@@ -551,6 +535,6 @@ $(document).ready(function() {
 		var unittests = new UnitTestCollection;
 	} else {
 		log("Ding! Script started.");
-		queueInterface = new QueueInterface;
+		queueInterface = new QueueInterface(new API, window.localStorage);
 	}
 });
