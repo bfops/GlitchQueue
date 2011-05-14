@@ -54,6 +54,19 @@ function objEquals(a, b) {
 	return true;
 }
 
+// Return a copy of [a]
+function objClone(a) {
+	var ret = (a instanceof Array ? [] : {});
+
+	for(x in a)
+		if(typeof(a[x]) == "object")
+			ret[x] = objClone(a[x]);
+		else
+			ret[x] = a[x];
+
+	return ret;
+}
+
 if(GM_registerMenuCommand)
 	GM_registerMenuCommand("About Glitch Skill Queuer", function() {
 		alert("ping's skill queuer for Glitch, modified by RobotGymnast.");
@@ -131,6 +144,26 @@ function UnitTestCollection() {
 		}
 	}
 
+	function test_objClone(testName) {
+		var obj1 = [1, 2, 3, 4, 5];
+		var obj2 = { x : 5, y : "hello", z : { a : "sdf", b : 12 } };
+
+		var obj1c = objClone(obj1);
+		var obj2c = objClone(obj2);
+
+		// Make sure copies are identical.
+		if(!(objEquals(obj1, obj1c) && objEquals(obj2, obj2c))) {
+			logTestResult(testName, false);
+			return;
+		}
+
+		// Make sure no references were kept.
+		obj1[0] = 6;
+		obj2["z"]["b"] = 6;
+
+		logTestResult(testName, !objEquals(obj1, obj1c) && !objEquals(obj2, obj2c));
+	}
+
 	function test_relativeComplement(testName) {
 		var obj1 = { hello : "blah", goodbye : "goodbye", bonjour : "asdf", salut : "qwerty", salve : "vale" };
 		var obj2 = { uno : "1", no : "0", re : "2", trois : "3", hello : "tyu", bonjour : "asdf", goodbye : "au revoir" };
@@ -180,7 +213,7 @@ function UnitTestCollection() {
 
 	function test_addToQueue(testName) {
 		var magicSkill = { name : "Magic", total_time : 10, time_remaining : 10 };
-		var magic2Skill = magicSkill;
+		var magic2Skill = objClone(magicSkill);
 		magic2Skill.name = "Magic2";
 
 		var api = new API;
@@ -232,7 +265,7 @@ function UnitTestCollection() {
 
 	function test_unlearnedSkill(testName) {
 		var magicSkill = { name : "Magic", total_time : 10, time_remaining : 10 };
-		var magic2Skill = magicSkill;
+		var magic2Skill = objClone(magicSkill);
 		magic2Skill.name = "Magic2";
 
 		var api = new API;
@@ -277,6 +310,7 @@ function UnitTestCollection() {
 	}
 
 	var unittests = [
+		new UnitTest(test_objClone, "Object clone function"),
 		new UnitTest(test_relativeComplement, "Relative complement function"),
 		new UnitTest(test_localStorage, "Local storage"),
 		new UnitTest(test_objEquals, "Object equality"),
