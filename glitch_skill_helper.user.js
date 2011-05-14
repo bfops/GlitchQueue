@@ -256,11 +256,9 @@ function UnitTestCollection() {
 		api.setAPIReturn("skills.listLearning", learning);
 
 		var testQueue = new QueueInterface(api, new StorageKey(new LocalStorage, "x"));
-		window.setTimeout(function() {
-			testQueue.api.call("skills.listLearning", {}, function(learningEvent) {
-				logTestResult(testName, objEquals(testQueue.skillQueue.getQueue(), []) && objEquals(learningEvent, learning));
-			});
-		}, 1000);
+		testQueue.api.call("skills.listLearning", {}, function(learningEvent) {
+			logTestResult(testName, objEquals(testQueue.skillQueue.getQueue(), []) && objEquals(learningEvent, learning));
+		});
 	}
 	var testResults = [];
 	var numberSucceeded = 0;
