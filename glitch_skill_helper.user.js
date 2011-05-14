@@ -315,7 +315,7 @@ function UnitTestCollection() {
 		var testQueue = new QueueInterface(api, storage);
 
 		testQueue.api.call("skills.listLearning", {}, function(learningEvent) {
-			logTestResult(testName, objEquals(testQueue.skillQueue.getQueue(), ["magic2", "magic3"]) && objEquals(learningEvent, learning));
+			logTestResult(testName, objEquals(testQueue.skillQueue.getQueue(), origQueue) && objEquals(learningEvent, learning));
 		});
 	}
 
@@ -339,7 +339,7 @@ function UnitTestCollection() {
 		var testQueue = new QueueInterface(api, storage);
 
 		testQueue.api.call("skills.listLearning", {}, function(learningEvent) {
-			logTestResult(testName, objEquals(testQueue.skillQueue.getQueue(), ["magic3", "magic2"]) && objEquals(learningEvent, learning));
+			logTestResult(testName, objEquals(testQueue.skillQueue.getQueue(), origQueue) && objEquals(learningEvent, learning));
 		});
 	}
 
