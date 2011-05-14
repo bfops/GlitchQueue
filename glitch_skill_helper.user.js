@@ -249,12 +249,15 @@ function UnitTestCollection() {
 		}, 1000);
 	}
 	var testResults = [];
+	var numberSucceeded = 0;
 
 	function logTestResult(testName, result) {
 		testResults.push({ name : testName, "result" : result });
+		if(result)
+			++numberSucceeded;
 
 		if(testResults.length == unittests.length) {
-			log("Done unit testing (" + testResults.length + " tests). Results:");
+			log(numberSucceeded + "/" + testResults.length + " tests succeeded:");
 			$.each(testResults, function(i, test) {
 				log("Test '" + test["name"] + "' " + (test["result"] ? "succeeded" : "failed") + ".");
 			});
