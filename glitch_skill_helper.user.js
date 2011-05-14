@@ -365,7 +365,7 @@ function UnitTestCollection() {
 		if(testResults.length == unittests.length) {
 			log(numberSucceeded + "/" + testResults.length + " tests succeeded:");
 			$.each(testResults, function(i, test) {
-				log("Test '" + test["name"] + "' " + (test["result"] ? "succeeded" : "failed") + ".");
+				log("Test " + (test["result"] ? "succeeded" : "failed") + ": " + test["name"]);
 			});
 		}
 	}
@@ -432,9 +432,6 @@ function setUpGUI(queueInterface) {
 }
 
 function log(msg) {
-	var now = new Date();
-	if(!$.isPlainObject(msg))
-		msg = now.getHours() + ":" + now.getMinutes() + "." + now.getSeconds() + (now.getHours() > 11 ? "PM" : "AM") + " - " + msg;
 	if(window.console) window.console.log(msg);
 	if(GM_log) GM_log(msg);
 }
