@@ -293,6 +293,30 @@ function UnitTestCollection() {
 			logTestResult(testName, objEquals(testQueue.skillQueue.getQueue(), []) && objEquals(learningEvent, learning));
 		});
 	}
+
+	function test_skillLoadQueueFrontLearnable(testName) {
+		var magicSkill = { name : "Magic", total_time : 10, time_remaining : 10 };
+		var magic2Skill = objClone(magicSkill);
+		magic2Skill.name = "Magic2";
+		var magic3Skill = objClone(magicSkill);
+		magic3Skill.name = "Magic3";
+
+		var api = new API;
+		var learning = { ok : 1, learning : { magic : magicSkill } }
+		api.setAPIReturn("skills.listAll", { ok : 1, items : { magic : magicSkill, magic2 : magic2Skill, magic3 : magic3Skill } });
+		api.setAPIReturn("skills.listAvailable", { ok : 1, skills : { magic : magicSkill, magic3 : magic3Skill, magic2 : magic2Skill } });
+		api.setAPIReturn("skills.listLearning", learning); 
+
+		var storage = new StorageKey(new LocalStorage, "x");
+		var origQueue = ["magic2", "magic3"];
+		storage.set(origQueue.toString());
+		var testQueue = new QueueInterface(api, storage);
+
+		testQueue.api.call("skills.listLearning", {}, function(learningEvent) {
+			logTestResult(testName, objEquals(testQueue.skillQueue.getQueue(), ["magic2", "magic3"]) && objEquals(learningEvent, learning));
+		});
+	}
+
 	var testResults = [];
 	var numberSucceeded = 0;
 
@@ -318,8 +342,8 @@ function UnitTestCollection() {
 		new UnitTest(test_addToQueue, "Adding to queue"),
 		new UnitTest(test_removeFromQueue, "Removing from queue"),
 		new UnitTest(test_unlearnedSkill, "Unlearned skill list"),
-		new UnitTest(test_skillLoadNoQueue, "Skill being learned on page load, no skill queue")/*,
-		new UnitTest(test_skillLoadQueueFrontLearnable, "Skill being learned on page load, queue with learnable skill"),
+		new UnitTest(test_skillLoadNoQueue, "Skill being learned on page load, no skill queue"),
+		new UnitTest(test_skillLoadQueueFrontLearnable, "Skill being learned on page load, queue with learnable skill")/*,
 		new UnitTest(test_skillLoadQueueMiddleLearnable, "Skill being learned on page load, queue with learnable skill 2"),
 		new UnitTest(test_skillLoadQueueNoLearnable, "Skill being learned on page load, queue with no learnable skills"),
 		new UnitTest(test_noSkillLoadNoQueue, "Page load with no queue"),
