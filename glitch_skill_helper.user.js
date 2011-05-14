@@ -286,6 +286,7 @@ function UnitTestCollection() {
 		var learning = { ok : 1, learning : { magic : magicSkill } }
 		api.setAPIReturn("skills.listAll", { ok : 1, items : { magic : magicSkill } });
 		api.setAPIReturn("skills.listAvailable", { ok : 1, skills : { magic : magicSkill } });
+		api.setAPIReturn("skills.listLearned", { ok : 1, skills : {} });
 		api.setAPIReturn("skills.listLearning", learning);
 
 		var testQueue = new QueueInterface(api, new StorageKey(new LocalStorage, "x"));
@@ -305,6 +306,7 @@ function UnitTestCollection() {
 		var learning = { ok : 1, learning : { magic : magicSkill } }
 		api.setAPIReturn("skills.listAll", { ok : 1, items : { magic : magicSkill, magic2 : magic2Skill, magic3 : magic3Skill } });
 		api.setAPIReturn("skills.listAvailable", { ok : 1, skills : { magic : magicSkill, magic3 : magic3Skill, magic2 : magic2Skill } });
+		api.setAPIReturn("skills.listLearned", { ok : 1, skills : {} });
 		api.setAPIReturn("skills.listLearning", learning); 
 
 		var storage = new StorageKey(new LocalStorage, "x");
@@ -526,10 +528,10 @@ function QueueInterface(api, storageKey) {
 	 * Displays skills in queue in sidebar
 	 */
 	this.displayQueuedItems = function() {
-		var q = this.skillQueue.getQueue().slice(0);
-		$.each(q, function(index, skill) {
-			showSkillInQueue(skill);
-		});
+		var q = objClone(this.skillQueue.getQueue());
+		$.each(q, function(index, skillId) {
+			this.showSkillInQueue(skillId);
+		}.bind(this));
 	}
 
 	/**
@@ -558,7 +560,7 @@ function QueueInterface(api, storageKey) {
 	this.skillQueueAddBtn_onClick = function() {
 		var skillId = $("#skillQueueSelect").val();
 		if(skillId) {
-			this.skillQueue.addSkillToQueue(skillId, function() { showSkillInQueue(skillId); }.bind(this));
+			this.skillQueue.addSkillToQueue(skillId, function() { this.showSkillInQueue(skillId); }.bind(this));
 
 			if(this.pollQTimer == 0)
 				this.renewPollTimer(1);
