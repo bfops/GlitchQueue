@@ -125,117 +125,138 @@ function StorageKey(storage, keyName) {
 }
 
 function UnitTestCollection() {
-	try {
-		function UnitTest(func, name) {
-			this.run = function() {
-				func(name);
-			}
+	function UnitTest(func, name) {
+		this.run = function() {
+			func(name);
 		}
-
-		function test_relativeComplement(testName) {
-			var obj1 = { hello : "blah", goodbye : "goodbye", bonjour : "asdf", salut : "qwerty", salve : "vale" };
-			var obj2 = { uno : "1", no : "0", re : "2", trois : "3", hello : "tyu", bonjour : "asdf", goodbye : "au revoir" };
-
-			logTestResult(testName, objEquals(relativeComplement(obj2, obj1), { uno : "1", no : "0", re : "2", trois : "3" }));
-		}
-
-		function test_localStorage(testName) {
-			var storage = new LocalStorage;
-			storage.setItem("brush", 5);
-			storage.setItem("hellSpawn__!!", "RobotGymnast");
-			storage.setItem("Pokemon", "Digimon?");
-			var storageKey = new StorageKey(storage, "brush");
-			var removeable = new StorageKey(storage, "Pokemon");
-			removeable.remove();
-
-			logTestResult(testName, storageKey.get() == 5 && storage.getItem("hellSpawn__!!") == "RobotGymnast" && typeof(storage.getItem("Pokemon")) == "undefined");
-		}
-
-		function test_objEquals(testName) {
-			var obj1 = { x : 5, y : "hall", z : { a : 'j', b : 6.2 } };
-			var obj2 = { x : 5, y : "hall", z : { a : 'j', b : 6.2 } };
-			var obj3 = { x : "5", y : "hall", z : { a : 'j', b : 6.2 } };
-			var obj4 = { x : 5, y : "hall", z : {} };
-			var obj5 = { x : 5, y : "hall", z : { a : 'j', b : 6.2, c : "~~~~" } };
-			var obj6 = { x : 5, y : "hall", z : { a : 'j' } };
-
-			logTestResult(testName, objEquals(obj1, obj2) && !objEquals(obj1, obj3) && !objEquals(obj1, obj4) && !objEquals(obj1, obj5) && !objEquals(obj1, obj6));
-		}
-
-		function test_apiReturns(testName) {
-			var testAPI = new API;
-			var desired = { "purpleDragon" : { "ofcourse" : 1, "whynot?" : { "excellent" : 12, "12" : "hello" } } };
-			var numberReturned = 0;
-			var totalNumber = 0;
-
-			for(callName in desired) {
-				testAPI.setAPIReturn(callName, desired[callName]);
-				testAPI.call(callName, {}, function(ret) {
-					if(ret != desired[callName])
-						logTestResult(testName, false);
-				}.bind(this));
-			}
-
-			logTestResult(testName, true);
-		}
-
-		function test_addToQueue(testName) {
-			var magicSkill = { name : "Magic", total_time : 10, time_remaining : 10 };
-			var magic2Skill = magicSkill;
-			magic2Skill.name = "Magic2";
-
-			var api = new API;
-			api.setAPIReturn("skills.listAll", { ok : 1, items : { magic : magicSkill, magic2 : magic2Skill } });
-			api.setAPIReturn("skills.listAvailable", { ok : 1, skills : { magic : magicSkill, magic2 : magic2Skill } });
-			api.setAPIReturn("skills.listLearning", { ok : 1, learning : {} });
-
-			var testQueue = new QueueInterface(api, new StorageKey(new LocalStorage, "x"));
-
-			window.setTimeout(function() {
-				testQueue.skillQueue.addSkillToQueue("magic", function(q1) {
-				testQueue.skillQueue.addSkillToQueue("magic2", function(q2) {
-					logTestResult(testName, q1 == [magicSkill] && q2 == [magicSkill, magic2Skill]);
-				});});
-			}, 1000);
-		}
-
-		var testCompletionNumber = 0;
-
-		function logTestResult(testName, result) {
-			log("Test '" + testName + "' " + (result ? "succeeded" : "failed") + ".");
-
-			if(++testCompletionNumber == unittests.length)
-				log("Done unit testing.");
-		}
-
-		var unittests = [
-			new UnitTest(test_relativeComplement, "Relative complement function"),
-			new UnitTest(test_localStorage, "Local storage"),
-			new UnitTest(test_objEquals, "Object equality"),
-			new UnitTest(test_apiReturns, "API wrapper return-hooking"),
-			new UnitTest(test_addToQueue, "Adding to queue")/*,
-			new UnitTest(test_removeFromQueue, "Removing from queue"),
-			new UnitTest(test_unlearnedSkill, "Unlearned skill list"),
-			new UnitTest(test_skillLoadNoQueue, "Skill being learned on page load, no skill queue"),
-			new UnitTest(test_skillLoadQueueFrontLearnable, "Skill being learned on page load, queue with learnable skill"),
-			new UnitTest(test_skillLoadQueueMiddleLearnable, "Skill being learned on page load, queue with learnable skill 2"),
-			new UnitTest(test_skillLoadQueueNoLearnable, "Skill being learned on page load, queue with no learnable skills"),
-			new UnitTest(test_noSkillLoadNoQueue, "Page load with no queue"),
-			new UnitTest(test_noSkillLoadQueueFrontLearnable, "Page load with queue including learnable skill"),
-			new UnitTest(test_noSkillLoadQueueMiddleLearnable, "Page load with queue including learnable skill 2"),
-			new UnitTest(test_noSkillLoadQueueNoLearnable, "Page load with queue including no learnable skills"),
-			new UnitTest(test_skillCompletedNoQueue, "Skill completed, no queue"),
-			new UnitTest(test_skillCompletedQueueFrontLearnable, "Skill completed, queue with learnable skill"),
-			new UnitTest(test_skillCompletedQueueMiddleLearnable, "Skill completed, queue with learnable skill 2"),
-			new UnitTest(test_skillCompletedQueueNoLearnable, "Skill completed, queue with no learnable skills")*/
-		];
-
-		$.each(unittests, function(i, test) {
-			test.run();
-		});
-	} catch(error) {
-		alert(error.message);
 	}
+
+	function test_relativeComplement(testName) {
+		var obj1 = { hello : "blah", goodbye : "goodbye", bonjour : "asdf", salut : "qwerty", salve : "vale" };
+		var obj2 = { uno : "1", no : "0", re : "2", trois : "3", hello : "tyu", bonjour : "asdf", goodbye : "au revoir" };
+
+		logTestResult(testName, objEquals(relativeComplement(obj2, obj1), { uno : "1", no : "0", re : "2", trois : "3" }));
+	}
+
+	function test_localStorage(testName) {
+		var storage = new LocalStorage;
+		storage.setItem("brush", 5);
+		storage.setItem("hellSpawn__!!", "RobotGymnast");
+		storage.setItem("Pokemon", "Digimon?");
+		var storageKey = new StorageKey(storage, "brush");
+		var removeable = new StorageKey(storage, "Pokemon");
+		removeable.remove();
+
+		logTestResult(testName, storageKey.get() == 5 && storage.getItem("hellSpawn__!!") == "RobotGymnast" && typeof(storage.getItem("Pokemon")) == "undefined");
+	}
+
+	function test_objEquals(testName) {
+		var obj1 = { x : 5, y : "hall", z : { a : 'j', b : 6.2 } };
+		var obj2 = { x : 5, y : "hall", z : { a : 'j', b : 6.2 } };
+		var obj3 = { x : "5", y : "hall", z : { a : 'j', b : 6.2 } };
+		var obj4 = { x : 5, y : "hall", z : {} };
+		var obj5 = { x : 5, y : "hall", z : { a : 'j', b : 6.2, c : "~~~~" } };
+		var obj6 = { x : 5, y : "hall", z : { a : 'j' } };
+
+		logTestResult(testName, objEquals(obj1, obj2) && !objEquals(obj1, obj3) && !objEquals(obj1, obj4) && !objEquals(obj1, obj5) && !objEquals(obj1, obj6));
+	}
+
+	function test_apiReturns(testName) {
+		var testAPI = new API;
+		var desired = { "purpleDragon" : { "ofcourse" : 1, "whynot?" : { "excellent" : 12, "12" : "hello" } } };
+		var numberReturned = 0;
+		var totalNumber = 0;
+
+		for(callName in desired) {
+			testAPI.setAPIReturn(callName, desired[callName]);
+			testAPI.call(callName, {}, function(ret) {
+				if(ret != desired[callName])
+					logTestResult(testName, false);
+			}.bind(this));
+		}
+
+		logTestResult(testName, true);
+	}
+
+	function test_addToQueue(testName) {
+		var magicSkill = { name : "Magic", total_time : 10, time_remaining : 10 };
+		var magic2Skill = magicSkill;
+		magic2Skill.name = "Magic2";
+
+		var api = new API;
+		api.setAPIReturn("skills.listAll", { ok : 1, items : { magic : magicSkill, magic2 : magic2Skill } });
+		api.setAPIReturn("skills.listAvailable", { ok : 1, skills : { magic : magicSkill, magic2 : magic2Skill } });
+		api.setAPIReturn("skills.listLearning", { ok : 1, learning : {} });
+
+		var testQueue = new QueueInterface(api, new StorageKey(new LocalStorage, "x"));
+
+		testQueue.skillQueue.doUnlearnedSkillsCache(testQueue.api, function(e) {
+			testQueue.skillQueue.addSkillToQueue("magic", function(q1) {
+			testQueue.skillQueue.addSkillToQueue("magic2", function(q2) {
+				logTestResult(testName, q1 == [magicSkill] && q2 == [magicSkill, magic2Skill]);
+			});});
+		});
+	}
+
+	function test_removeFromQueue(testName) {
+		var magicSkill = { name : "Magic", total_time : 10, time_remaining : 10 };
+
+		var api = new API;
+		api.setAPIReturn("skills.listAll", { ok : 1, items : { magic : magicSkill } });
+		api.setAPIReturn("skills.listAvailable", { ok : 1, skills : { magic : magicSkill } });
+		api.setAPIReturn("skills.listLearning", { ok : 1, learning : {} });
+
+		var testQueue = new QueueInterface(api, new StorageKey(new LocalStorage, "x"));
+
+		testQueue.skillQueue.doUnlearnedSkillsCache(testQueue.api, function(e) {
+			testQueue.skillQueue.addSkillToQueue("magic", function(q1) {
+			testQueue.skillQueue.removeSkillFromQueue("magic", function(q2) {
+				logTestResult(testName, q1 == [magicSkill] && q2 == []);
+			});});
+		});
+	}
+
+
+
+		});
+	}
+	var testResults = [];
+
+	function logTestResult(testName, result) {
+		testResults.push({ name : testName, "result" : result });
+
+		if(testResults.length == unittests.length) {
+			log("Done unit testing. Results:");
+			for(test in testResults)
+				log("Test '" + test.name + "' " + (test.result ? "succeeded" : "failed") + ".");
+		}
+	}
+
+	var unittests = [
+		new UnitTest(test_relativeComplement, "Relative complement function"),
+		new UnitTest(test_localStorage, "Local storage"),
+		new UnitTest(test_objEquals, "Object equality"),
+		new UnitTest(test_apiReturns, "API wrapper return-hooking"),
+		new UnitTest(test_addToQueue, "Adding to queue"),
+		new UnitTest(test_removeFromQueue, "Removing from queue"),
+		new UnitTest(test_unlearnedSkill, "Unlearned skill list"),
+		new UnitTest(test_skillLoadNoQueue, "Skill being learned on page load, no skill queue")/*,
+		new UnitTest(test_skillLoadQueueFrontLearnable, "Skill being learned on page load, queue with learnable skill"),
+		new UnitTest(test_skillLoadQueueMiddleLearnable, "Skill being learned on page load, queue with learnable skill 2"),
+		new UnitTest(test_skillLoadQueueNoLearnable, "Skill being learned on page load, queue with no learnable skills"),
+		new UnitTest(test_noSkillLoadNoQueue, "Page load with no queue"),
+		new UnitTest(test_noSkillLoadQueueFrontLearnable, "Page load with queue including learnable skill"),
+		new UnitTest(test_noSkillLoadQueueMiddleLearnable, "Page load with queue including learnable skill 2"),
+		new UnitTest(test_noSkillLoadQueueNoLearnable, "Page load with queue including no learnable skills"),
+		new UnitTest(test_skillCompletedNoQueue, "Skill completed, no queue"),
+		new UnitTest(test_skillCompletedQueueFrontLearnable, "Skill completed, queue with learnable skill"),
+		new UnitTest(test_skillCompletedQueueMiddleLearnable, "Skill completed, queue with learnable skill 2"),
+		new UnitTest(test_skillCompletedQueueNoLearnable, "Skill completed, queue with no learnable skills")*/
+	];
+
+	$.each(unittests, function(i, test) {
+		test.run();
+	});
 }
 
 // Skill Queue styling
