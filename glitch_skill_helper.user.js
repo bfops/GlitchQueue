@@ -216,9 +216,37 @@ function UnitTestCollection() {
 		});
 	}
 
+	function test_unlearnedSkill(testName) {
+		var magicSkill = { name : "Magic", total_time : 10, time_remaining : 10 };
+		var magic2Skill = magicSkill;
+		magic2Skill.name = "Magic2";
 
+		var api = new API;
+		api.setAPIReturn("skills.listAll", { ok : 1, items : { magic : magicSkill, magic2 : magic2Skill } });
+		api.setAPIReturn("skills.listLearned", { ok : 1, skills : { magic : magicSkill } });
+		api.setAPIReturn("skills.listLearning", { ok : 1, learning : {} });
 
+		var testQueue = new QueueInterface(api, new StorageKey(new LocalStorage, "x"));
+		testQueue.skillQueue.doUnlearnedSkillsCache(testQueue.api, function(e) {
+			logTestResult(testName, objEquals(e, { magic2 : magic2Skill}));
 		});
+	}
+
+	function test_skillLoadNoQueue(testName) {
+		var magicSkill = { name : "Magic", total_time : 10, time_remaining : 10 };
+
+		var api = new API;
+		var learning = { ok : 1, learning : { magic : magicSkill } }
+		api.setAPIReturn("skills.listAll", { ok : 1, items : { magic : magicSkill } });
+		api.setAPIReturn("skills.listAvailable", { ok : 1, skills : { magic : magicSkill } });
+		api.setAPIReturn("skills.listLearning", learning);
+
+		var testQueue = new QueueInterface(api, new StorageKey(new LocalStorage, "x"));
+		window.setTimeout(function() {
+			testQueue.api.call("skills.listLearning", {}, function(learningEvent) {
+				logTestResult(testName, testQueue.skillQueue.getQueue() == [] && objEquals(learningEvent, learning));
+			});
+		}, 1000);
 	}
 	var testResults = [];
 
