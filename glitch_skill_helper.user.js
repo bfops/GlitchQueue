@@ -351,7 +351,7 @@ function GlitchQueue(queueStorageKey) {
 		this.queueStorageKey.set(skillQueue.toString());
 		this.setQueue(skillQueue);
 		if(handler)
-			handler();
+			handler(skillQueue);
 	};
 
 	// add skill to queue
