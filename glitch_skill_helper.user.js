@@ -254,9 +254,10 @@ function UnitTestCollection() {
 		testResults.push({ name : testName, "result" : result });
 
 		if(testResults.length == unittests.length) {
-			log("Done unit testing. Results:");
-			for(test in testResults)
-				log("Test '" + test.name + "' " + (test.result ? "succeeded" : "failed") + ".");
+			log("Done unit testing (" + testResults.length + " tests). Results:");
+			$.each(testResults, function(i, test) {
+				log("Test '" + test["name"] + "' " + (test["result"] ? "succeeded" : "failed") + ".");
+			});
 		}
 	}
 
