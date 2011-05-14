@@ -9,7 +9,7 @@
 // @description	   Manages skill-queuing for learning in Glitch.
 // ==/UserScript==
 
-// Don't change this unless you know what a unit test is, and you want to enable them.
+// Don't change this unless you know what a unit test is, and you want to enable them, instead of the regular script.
 var unittest = true;
 var POLL_INTERVAL_DISABLED = 5 * 60; // poll interval when game is disabled
 var POLL_INTERVAL_ERROR = 60;	// poll interval when unknown error is encountered, maybe 500 errs
@@ -86,6 +86,7 @@ if(unsafeWindow) {
 	window = unsafeWindow;
 }
 
+// An API wrapper, which can override specific API calls with fake data.
 function API() {
 	this.call = function(callName, args, handler) {
 		if(apiReturns && apiReturns[callName]) {
@@ -100,6 +101,7 @@ function API() {
 		apiReturns[apiCallName] = apiReturn;
 	}
 
+	// Collection of API overrides.
 	var apiReturns = {};
 }
 
@@ -120,6 +122,7 @@ function LocalStorage() {
 	var storedItems = {};
 }
 
+// Wraps a storage system for a specific key name.
 function StorageKey(storage, keyName) {
 	this.get = function() {
 		return this.storage.getItem(this.keyName);
@@ -137,7 +140,9 @@ function StorageKey(storage, keyName) {
 	this.keyName = keyName;
 }
 
+// Run and log a collection of unit tests.
 function UnitTestCollection() {
+	// A unit test is a function with a specific description.
 	function UnitTest(func, name) {
 		this.run = function() {
 			func(name);
@@ -148,16 +153,16 @@ function UnitTestCollection() {
 		var obj1 = [1, 2, 3, 4, 5];
 		var obj2 = { x : 5, y : "hello", z : { a : "sdf", b : 12 } };
 
+		// Make sure copies are identical.
 		var obj1c = objClone(obj1);
 		var obj2c = objClone(obj2);
 
-		// Make sure copies are identical.
 		if(!(objEquals(obj1, obj1c) && objEquals(obj2, obj2c))) {
 			logTestResult(testName, false);
 			return;
 		}
 
-		// Make sure no references were kept.
+		// Make sure no references were kept; change the originals, so they should no longer match the copies.
 		obj1[0] = 6;
 		obj2["z"]["b"] = 6;
 
@@ -188,13 +193,13 @@ function UnitTestCollection() {
 		var obj2 = { x : 5, y : "hall", z : { a : 'j', b : 6.2 } };
 		var obj3 = { x : "5", y : "hall", z : { a : 'j', b : 6.2 } };
 		var obj4 = { x : 5, y : "hall", z : {} };
-		var obj5 = { x : 5, y : "hall", z : { a : 'j', b : 6.2, c : "~~~~" } };
+		var obj5 = { x : 5, y : "hall", z : { a : 'j', b : 6.2, c : "~" } };
 		var obj6 = { x : 5, y : "hall", z : { a : 'j' } };
 
 		logTestResult(testName, objEquals(obj1, obj2) && !objEquals(obj1, obj3) && !objEquals(obj1, obj4) && !objEquals(obj1, obj5) && !objEquals(obj1, obj6));
 	}
 
-	function test_apiReturns(testName) {
+	function test_apiOverriding(testName) {
 		var testAPI = new API;
 		var desired = { "purpleDragon" : { "ofcourse" : 1, "whynot?" : { "excellent" : 12, "12" : "hello" } } };
 		var numberReturned = 0;
@@ -263,22 +268,6 @@ function UnitTestCollection() {
 		});
 	}
 
-	function test_unlearnedSkill(testName) {
-		var magicSkill = { name : "Magic", total_time : 10, time_remaining : 10 };
-		var magic2Skill = objClone(magicSkill);
-		magic2Skill.name = "Magic2";
-
-		var api = new API;
-		api.setAPIReturn("skills.listAll", { ok : 1, items : { magic : magicSkill, magic2 : magic2Skill } });
-		api.setAPIReturn("skills.listLearned", { ok : 1, skills : { magic : magicSkill } });
-		api.setAPIReturn("skills.listLearning", { ok : 1, learning : {} });
-
-		var testQueue = new QueueInterface(api, new StorageKey(new LocalStorage, "x"));
-		testQueue.skillQueue.doUnlearnedSkillsCache(testQueue.api, function(e) {
-			logTestResult(testName, objEquals(e, { magic2 : magic2Skill}));
-		});
-	}
-
 	function test_skillLoadNoQueue(testName) {
 		var magicSkill = { name : "Magic", total_time : 10, time_remaining : 10 };
 
@@ -343,6 +332,28 @@ function UnitTestCollection() {
 		});
 	}
 
+	function test_skillLoadQueueNoLearnable(testName) {
+		var magicSkill = { name : "Magic", total_time : 10, time_remaining : 10 };
+		var magic2Skill = objClone(magicSkill);
+		magic2Skill.name = "Magic2";
+
+		var api = new API;
+		var learning = { ok : 1, learning : { magic : magicSkill } }
+		api.setAPIReturn("skills.listAll", { ok : 1, items : { magic : magicSkill, magic2 : magic2Skill } });
+		api.setAPIReturn("skills.listAvailable", { ok : 1, skills : {} });
+		api.setAPIReturn("skills.listLearned", { ok : 1, skills : {} });
+		api.setAPIReturn("skills.listLearning", learning); 
+
+		var storage = new StorageKey(new LocalStorage, "x");
+		var origQueue = ["magic2"];
+		storage.set(origQueue.toString());
+		var testQueue = new QueueInterface(api, storage);
+
+		testQueue.api.call("skills.listLearning", {}, function(learningEvent) {
+			logTestResult(testName, objEquals(testQueue.skillQueue.getQueue(), origQueue) && objEquals(learningEvent, learning));
+		});
+	}
+
 	var testResults = [];
 	var numberSucceeded = 0;
 
@@ -364,14 +375,13 @@ function UnitTestCollection() {
 		new UnitTest(test_relativeComplement, "Relative complement function"),
 		new UnitTest(test_localStorage, "Local storage"),
 		new UnitTest(test_objEquals, "Object equality"),
-		new UnitTest(test_apiReturns, "API wrapper return-hooking"),
+		new UnitTest(test_apiOverriding, "API wrapper return-hooking"),
 		new UnitTest(test_addToQueue, "Adding to queue"),
 		new UnitTest(test_removeFromQueue, "Removing from queue"),
-		new UnitTest(test_unlearnedSkill, "Unlearned skill list"),
 		new UnitTest(test_skillLoadNoQueue, "Skill being learned on page load, no skill queue"),
 		new UnitTest(test_skillLoadQueueFrontLearnable, "Skill being learned on page load, queue with learnable skill"),
-		new UnitTest(test_skillLoadQueueMiddleLearnable, "Skill being learned on page load, queue with learnable skill 2")/*,
-		new UnitTest(test_skillLoadQueueNoLearnable, "Skill being learned on page load, queue with no learnable skills"),
+		new UnitTest(test_skillLoadQueueMiddleLearnable, "Skill being learned on page load, queue with learnable skill 2"),
+		new UnitTest(test_skillLoadQueueNoLearnable, "Skill being learned on page load, queue with no learnable skills")/*,
 		new UnitTest(test_noSkillLoadNoQueue, "Page load with no queue"),
 		new UnitTest(test_noSkillLoadQueueFrontLearnable, "Page load with queue including learnable skill"),
 		new UnitTest(test_noSkillLoadQueueMiddleLearnable, "Page load with queue including learnable skill 2"),
