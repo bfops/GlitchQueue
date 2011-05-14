@@ -633,12 +633,12 @@ function QueueInterface(api, storageKey) {
 	this.pollQTimer = 0;
 
 	this.skillQueue = new GlitchQueue(this.storageKey);
+	$('body').data("glitchq", this.skillQueue.getSavedQueue());
+
 	// Display the queue after creating both caches.
 	this.skillQueue.doUnlearnedSkillsCache(this.api, function(x) {
 	this.skillQueue.doAvailableSkillsCache(this.api, function(x) { this.displayQueuedItems(); }.bind(this));
 	}.bind(this));
-
-	$('body').data("glitchq", this.skillQueue.getSavedQueue());
 
 	this.pollJob();
 
