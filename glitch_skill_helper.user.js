@@ -186,15 +186,22 @@ function UnitTestCollection() {
 		var api = new API;
 		api.setAPIReturn("skills.listAll", { ok : 1, items : { magic : magicSkill, magic2 : magic2Skill } });
 		api.setAPIReturn("skills.listAvailable", { ok : 1, skills : { magic : magicSkill, magic2 : magic2Skill } });
+		api.setAPIReturn("skills.listLearned", { ok : 1, skills : {} });
 		api.setAPIReturn("skills.listLearning", { ok : 1, learning : {} });
 
 		var testQueue = new QueueInterface(api, new StorageKey(new LocalStorage, "x"));
 
 		testQueue.skillQueue.doUnlearnedSkillsCache(testQueue.api, function(e) {
 			testQueue.skillQueue.addSkillToQueue("magic", function(q1) {
-			testQueue.skillQueue.addSkillToQueue("magic2", function(q2) {
-				logTestResult(testName, q1 == [magicSkill] && q2 == [magicSkill, magic2Skill]);
-			});});
+				if(!objEquals(q1, ["magic"])) {
+					logTestResult(testName, false);
+					return;
+				}
+
+				testQueue.skillQueue.addSkillToQueue("magic2", function(q2) {
+					logTestResult(testName, objEquals(q2, ["magic", "magic2"]));
+				});
+			});
 		});
 	}
 
@@ -204,15 +211,22 @@ function UnitTestCollection() {
 		var api = new API;
 		api.setAPIReturn("skills.listAll", { ok : 1, items : { magic : magicSkill } });
 		api.setAPIReturn("skills.listAvailable", { ok : 1, skills : { magic : magicSkill } });
+		api.setAPIReturn("skills.listLearned", { ok : 1, skills : {} });
 		api.setAPIReturn("skills.listLearning", { ok : 1, learning : {} });
 
 		var testQueue = new QueueInterface(api, new StorageKey(new LocalStorage, "x"));
 
 		testQueue.skillQueue.doUnlearnedSkillsCache(testQueue.api, function(e) {
 			testQueue.skillQueue.addSkillToQueue("magic", function(q1) {
-			testQueue.skillQueue.removeSkillFromQueue("magic", function(q2) {
-				logTestResult(testName, q1 == [magicSkill] && q2 == []);
-			});});
+				if(!objEquals(q1, ["magic"])) {
+					logTestResult(testName, false);
+					return;
+				}
+
+				testQueue.skillQueue.removeSkillFromQueue("magic", function(q2) {
+					logTestResult(testName, objEquals(q2, []));
+				});
+			});
 		});
 	}
 
@@ -244,7 +258,7 @@ function UnitTestCollection() {
 		var testQueue = new QueueInterface(api, new StorageKey(new LocalStorage, "x"));
 		window.setTimeout(function() {
 			testQueue.api.call("skills.listLearning", {}, function(learningEvent) {
-				logTestResult(testName, testQueue.skillQueue.getQueue() == [] && objEquals(learningEvent, learning));
+				logTestResult(testName, objEquals(testQueue.skillQueue.getQueue(), []) && objEquals(learningEvent, learning));
 			});
 		}, 1000);
 	}
