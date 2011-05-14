@@ -359,14 +359,14 @@ function UnitTestCollection() {
 
 	function logTestResult(testName, result) {
 		testResults.push({ name : testName, "result" : result });
-		if(result)
+		if(result == true)
 			++numberSucceeded;
 
 		if(testResults.length == unittests.length) {
-			log(numberSucceeded + "/" + testResults.length + " tests succeeded:");
 			$.each(testResults, function(i, test) {
 				log("Test " + (test["result"] ? "succeeded" : "failed") + ": " + test["name"]);
 			});
+			log(numberSucceeded + "/" + testResults.length + " tests succeeded.");
 		}
 	}
 
