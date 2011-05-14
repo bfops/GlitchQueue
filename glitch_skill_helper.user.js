@@ -327,7 +327,6 @@ function GlitchQueue(queueStorageKey) {
 
 	// add skill to queue
 	this.addSkillToQueue = function(skillId, handler) {
-		for(x in this.unlearnedSkills)
 		log("Adding " + this.unlearnedSkills[skillId].name + " to queue.");
 		var q = this.getQueue();
 		q.push(skillId);
