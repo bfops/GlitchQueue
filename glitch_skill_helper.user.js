@@ -89,7 +89,7 @@ if(unsafeWindow) {
 // An API wrapper, which can override specific API calls with fake data.
 function API() {
 	this.call = function(callName, args, handler) {
-		if(apiReturns && apiReturns[callName]) {
+		if(apiReturns[callName]) {
 			log("API call " + callName + " overriden.");
 			if(handler) handler(apiReturns[callName]);
 		}
@@ -97,7 +97,8 @@ function API() {
 			api_call(callName, args, handler);
 	}
 
-	this.setAPIReturn = function(apiCallName, apiReturn) {
+	// Override API call [apiCallName] to return [apiReturn].
+	this.setAPIOverride = function(apiCallName, apiReturn) {
 		apiReturns[apiCallName] = apiReturn;
 	}
 
@@ -206,7 +207,7 @@ function UnitTestCollection() {
 		var totalNumber = 0;
 
 		for(callName in desired) {
-			testAPI.setAPIReturn(callName, desired[callName]);
+			testAPI.setAPIOverride(callName, desired[callName]);
 			testAPI.call(callName, {}, function(ret) {
 				if(ret != desired[callName])
 					logTestResult(testName, false);
@@ -222,10 +223,10 @@ function UnitTestCollection() {
 		magic2Skill.name = "Magic2";
 
 		var api = new API;
-		api.setAPIReturn("skills.listAll", { ok : 1, items : { magic : magicSkill, magic2 : magic2Skill } });
-		api.setAPIReturn("skills.listAvailable", { ok : 1, skills : { magic : magicSkill, magic2 : magic2Skill } });
-		api.setAPIReturn("skills.listLearned", { ok : 1, skills : {} });
-		api.setAPIReturn("skills.listLearning", { ok : 1, learning : {} });
+		api.setAPIOverride("skills.listAll", { ok : 1, items : { magic : magicSkill, magic2 : magic2Skill } });
+		api.setAPIOverride("skills.listAvailable", { ok : 1, skills : { magic : magicSkill, magic2 : magic2Skill } });
+		api.setAPIOverride("skills.listLearned", { ok : 1, skills : {} });
+		api.setAPIOverride("skills.listLearning", { ok : 1, learning : {} });
 
 		var testQueue = new QueueInterface(api, new StorageKey(new LocalStorage, "x"));
 
@@ -247,10 +248,10 @@ function UnitTestCollection() {
 		var magicSkill = { name : "Magic", total_time : 10, time_remaining : 10 };
 
 		var api = new API;
-		api.setAPIReturn("skills.listAll", { ok : 1, items : { magic : magicSkill } });
-		api.setAPIReturn("skills.listAvailable", { ok : 1, skills : { magic : magicSkill } });
-		api.setAPIReturn("skills.listLearned", { ok : 1, skills : {} });
-		api.setAPIReturn("skills.listLearning", { ok : 1, learning : {} });
+		api.setAPIOverride("skills.listAll", { ok : 1, items : { magic : magicSkill } });
+		api.setAPIOverride("skills.listAvailable", { ok : 1, skills : { magic : magicSkill } });
+		api.setAPIOverride("skills.listLearned", { ok : 1, skills : {} });
+		api.setAPIOverride("skills.listLearning", { ok : 1, learning : {} });
 
 		var testQueue = new QueueInterface(api, new StorageKey(new LocalStorage, "x"));
 
@@ -273,10 +274,10 @@ function UnitTestCollection() {
 
 		var api = new API;
 		var learning = { ok : 1, learning : { magic : magicSkill } }
-		api.setAPIReturn("skills.listAll", { ok : 1, items : { magic : magicSkill } });
-		api.setAPIReturn("skills.listAvailable", { ok : 1, skills : { magic : magicSkill } });
-		api.setAPIReturn("skills.listLearned", { ok : 1, skills : {} });
-		api.setAPIReturn("skills.listLearning", learning);
+		api.setAPIOverride("skills.listAll", { ok : 1, items : { magic : magicSkill } });
+		api.setAPIOverride("skills.listAvailable", { ok : 1, skills : { magic : magicSkill } });
+		api.setAPIOverride("skills.listLearned", { ok : 1, skills : {} });
+		api.setAPIOverride("skills.listLearning", learning);
 
 		var testQueue = new QueueInterface(api, new StorageKey(new LocalStorage, "x"));
 		testQueue.api.call("skills.listLearning", {}, function(learningEvent) {
@@ -293,10 +294,10 @@ function UnitTestCollection() {
 
 		var api = new API;
 		var learning = { ok : 1, learning : { magic : magicSkill } }
-		api.setAPIReturn("skills.listAll", { ok : 1, items : { magic : magicSkill, magic2 : magic2Skill, magic3 : magic3Skill } });
-		api.setAPIReturn("skills.listAvailable", { ok : 1, skills : { magic : magicSkill, magic3 : magic3Skill, magic2 : magic2Skill } });
-		api.setAPIReturn("skills.listLearned", { ok : 1, skills : {} });
-		api.setAPIReturn("skills.listLearning", learning); 
+		api.setAPIOverride("skills.listAll", { ok : 1, items : { magic : magicSkill, magic2 : magic2Skill, magic3 : magic3Skill } });
+		api.setAPIOverride("skills.listAvailable", { ok : 1, skills : { magic : magicSkill, magic3 : magic3Skill, magic2 : magic2Skill } });
+		api.setAPIOverride("skills.listLearned", { ok : 1, skills : {} });
+		api.setAPIOverride("skills.listLearning", learning); 
 
 		var storage = new StorageKey(new LocalStorage, "x");
 		var origQueue = ["magic2", "magic3"];
@@ -317,10 +318,10 @@ function UnitTestCollection() {
 
 		var api = new API;
 		var learning = { ok : 1, learning : { magic : magicSkill } }
-		api.setAPIReturn("skills.listAll", { ok : 1, items : { magic : magicSkill, magic2 : magic2Skill, magic3 : magic3Skill } });
-		api.setAPIReturn("skills.listAvailable", { ok : 1, skills : { magic2 : magic2Skill } });
-		api.setAPIReturn("skills.listLearned", { ok : 1, skills : {} });
-		api.setAPIReturn("skills.listLearning", learning); 
+		api.setAPIOverride("skills.listAll", { ok : 1, items : { magic : magicSkill, magic2 : magic2Skill, magic3 : magic3Skill } });
+		api.setAPIOverride("skills.listAvailable", { ok : 1, skills : { magic2 : magic2Skill } });
+		api.setAPIOverride("skills.listLearned", { ok : 1, skills : {} });
+		api.setAPIOverride("skills.listLearning", learning); 
 
 		var storage = new StorageKey(new LocalStorage, "x");
 		var origQueue = ["magic3", "magic2"];
@@ -339,10 +340,10 @@ function UnitTestCollection() {
 
 		var api = new API;
 		var learning = { ok : 1, learning : { magic : magicSkill } }
-		api.setAPIReturn("skills.listAll", { ok : 1, items : { magic : magicSkill, magic2 : magic2Skill } });
-		api.setAPIReturn("skills.listAvailable", { ok : 1, skills : {} });
-		api.setAPIReturn("skills.listLearned", { ok : 1, skills : {} });
-		api.setAPIReturn("skills.listLearning", learning); 
+		api.setAPIOverride("skills.listAll", { ok : 1, items : { magic : magicSkill, magic2 : magic2Skill } });
+		api.setAPIOverride("skills.listAvailable", { ok : 1, skills : {} });
+		api.setAPIOverride("skills.listLearned", { ok : 1, skills : {} });
+		api.setAPIOverride("skills.listLearning", learning); 
 
 		var storage = new StorageKey(new LocalStorage, "x");
 		var origQueue = ["magic2"];
