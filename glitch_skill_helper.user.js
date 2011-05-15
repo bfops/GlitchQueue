@@ -92,6 +92,7 @@ function API() {
 		if(apiReturns[callName]) {
 			log("API call " + callName + " overriden.");
 			if(handler) handler(apiReturns[callName]);
+			if(callbacks[callName]) callbacks[callName](apiReturns[callName]);
 		}
 		else
 			api_call(callName, args, handler);
@@ -102,8 +103,15 @@ function API() {
 		apiReturns[apiCallName] = apiReturn;
 	}
 
+	// Call [callback] after the normal handler for [apiCallName] has been executed.
+	this.setAPICallback = function(apiCallName, callback) {
+		callbacks[apiCallName] = callback;
+	}
+
 	// Collection of API overrides.
 	var apiReturns = {};
+	// Collection of API callbacks.
+	var callbacks = {};
 }
 
 // Temporary storage of items, with the same interface as window.localStorage.
@@ -215,6 +223,20 @@ function UnitTestCollection() {
 		}
 
 		logTestResult(testName, true);
+	}
+
+	function test_apiCallbacks(testName) {
+		var testAPI = new API;
+		var correctCallbackCalledFirst = false;
+
+		testAPI.setAPIOverride("test", {});
+		testAPI.setAPICallback("test", function (e) {
+			logTestResult(testName, correctCallbackCalledFirst);
+		});
+
+		testAPI.call("test", {}, function (e) {
+			correctCallbackCalledFirst = true;
+		});
 	}
 
 	function test_addToQueue(testName) {
@@ -377,6 +399,7 @@ function UnitTestCollection() {
 		new UnitTest(test_localStorage, "Local storage"),
 		new UnitTest(test_objEquals, "Object equality"),
 		new UnitTest(test_apiOverriding, "API wrapper return-hooking"),
+		new UnitTest(test_apiCallbacks, "API wrapper callback calls"),
 		new UnitTest(test_addToQueue, "Adding to queue"),
 		new UnitTest(test_removeFromQueue, "Removing from queue"),
 		new UnitTest(test_skillLoadNoQueue, "Skill being learned on page load, no skill queue"),
