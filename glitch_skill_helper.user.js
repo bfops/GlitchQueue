@@ -103,9 +103,17 @@ function API() {
 		apiReturns[apiCallName] = apiReturn;
 	}
 
+	this.clearAPIOverride = function(apiCallName) {
+		setAPIOverride(apiCallName, undefined);
+	}
+
 	// Call [callback] after the normal handler for [apiCallName] has been executed.
 	this.setAPICallback = function(apiCallName, callback) {
 		callbacks[apiCallName] = callback;
+	}
+
+	this.clearAPICallback = function(apiCallName) {
+		setAPICallback(apiCallName, undefined);
 	}
 
 	// Collection of API overrides.
