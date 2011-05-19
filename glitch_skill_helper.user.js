@@ -157,6 +157,14 @@ function StorageKey(storage, keyName) {
 	this.keyName = keyName;
 }
 
+// Wait to receive [numberOfSignals] signals before calling [callback].
+function SignalCounter(numberOfSignals, callback) {
+	this.sendSignal = function() {
+		if(--numberOfSignals <= 0)
+			callback();
+	}
+}
+
 // Run and log a collection of unit tests.
 function UnitTestCollection() {
 	// A unit test is a function with a specific description.
@@ -164,6 +172,18 @@ function UnitTestCollection() {
 		this.run = function() {
 			func(name);
 		}
+	}
+
+	function test_signalCounter(testName) {
+		var count = 4;
+		var exitedLoop = false;
+		var testSignal = new SignalCounter(count, function() {
+			logTestResult(testName, (exitedLoop ? count == 0 : count == 1));
+		});
+
+		for(; count > 0; --count)
+			testSignal.sendSignal();
+		exitedLoop = true;
 	}
 
 	function test_objClone(testName) {
@@ -309,10 +329,19 @@ function UnitTestCollection() {
 		api.setAPIOverride("skills.listLearned", { ok : 1, skills : {} });
 		api.setAPIOverride("skills.listLearning", learning);
 
-		var testQueue = new QueueInterface(api, new StorageKey(new LocalStorage, "x"));
-		testQueue.api.call("skills.listLearning", {}, function(learningEvent) {
+		var testQueue, learningEvent;
+		var logResult = new SignalCounter(2, function() {
 			logTestResult(testName, objEquals(testQueue.skillQueue.getQueue(), []) && objEquals(learningEvent, learning));
 		});
+
+		api.setAPICallback("skills.listLearning", function(e) {
+			api.clearAPICallback("skills.listLearning");
+			learningEvent = e;
+			logResult.sendSignal();
+		});
+		testQueue = new QueueInterface(api, new StorageKey(new LocalStorage, "x"));
+
+		logResult.sendSignal();
 	}
 
 	function test_skillLoadQueueFrontLearnable(testName) {
@@ -402,6 +431,7 @@ function UnitTestCollection() {
 	}
 
 	var unittests = [
+		new UnitTest(test_signalCounter, "Signal-counter class"),
 		new UnitTest(test_objClone, "Object clone function"),
 		new UnitTest(test_relativeComplement, "Relative complement function"),
 		new UnitTest(test_localStorage, "Local storage"),
