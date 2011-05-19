@@ -104,7 +104,7 @@ function API() {
 	}
 
 	this.clearAPIOverride = function(apiCallName) {
-		setAPIOverride(apiCallName, undefined);
+		this.setAPIOverride(apiCallName, undefined);
 	}
 
 	// Call [callback] after the normal handler for [apiCallName] has been executed.
@@ -113,7 +113,7 @@ function API() {
 	}
 
 	this.clearAPICallback = function(apiCallName) {
-		setAPICallback(apiCallName, undefined);
+		this.setAPICallback(apiCallName, undefined);
 	}
 
 	// Collection of API overrides.
@@ -128,12 +128,12 @@ function LocalStorage() {
 		return storedItems[key];
 	}
 
-	this.removeItem = function(key) {
-		storedItems[key] = undefined;
-	}
-
 	this.setItem = function(key, value) {
 		storedItems[key] = value;
+	}
+
+	this.removeItem = function(key) {
+		this.setItem(key, undefined);
 	}
 
 	var storedItems = {};
