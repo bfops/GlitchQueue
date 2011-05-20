@@ -330,11 +330,13 @@ function UnitTestCollection() {
 		api.setAPIOverride("skills.listLearning", learning);
 
 		var testQueue, learningEvent;
+		// Log the result after the QueueInterface constructor completed AND skills.listLearning has been called from the API.
 		var logResult = new SignalCounter(2, function() {
 			logTestResult(testName, objEquals(testQueue.skillQueue.getQueue(), []) && objEquals(learningEvent, learning));
 		});
 
 		api.setAPICallback("skills.listLearning", function(e) {
+			// TODO: mutex
 			api.clearAPICallback("skills.listLearning");
 			learningEvent = e;
 			logResult.sendSignal();
