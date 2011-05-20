@@ -346,6 +346,34 @@ function UnitTestCollection() {
 		logResult.sendSignal();
 	}
 
+	function genericSkillLoadQueueTest(testName, allOverride, availableOverride, learnedOverride, learningOverride, origQueue) {
+		var api = new API;
+		api.setAPIOverride("skills.listAll", allOverride);
+		api.setAPIOverride("skills.listAvailable", availableOverride);
+		api.setAPIOverride("skills.listLearned", learnedOverride); 
+		api.setAPIOverride("skills.listLearning", learningOverride);
+
+		var testQueue, learningEvent;
+		// The test is only finished after the QueueInterface constructor has completed AND skills.listLearning has been called from the API.
+		var logResult = new SignalCounter(2, function() {
+			// Success occurred if nothing has changed.
+			logTestResult(testName, objEquals(testQueue.skillQueue.getQueue(), origQueue) && objEquals(learningEvent, learningOverride));
+		});
+
+		api.setAPICallback("skills.listLearning", function(e) {
+			api.clearAPICallback("Skills.listLearning");
+			learningEvent = e;
+			logResult.sendSignal();
+		});
+
+		var storage = new StorageKey(new LocalStorage, "x");
+		storage.set(origQueue.toString());
+
+		testQueue = new QueueInterface(api, storage);
+
+		logResult.sendSignal();
+	}
+
 	function test_skillLoadQueueFrontLearnable(testName) {
 		var magicSkill = { name : "Magic", total_time : 10, time_remaining : 10 };
 		var magic2Skill = objClone(magicSkill);
@@ -353,21 +381,13 @@ function UnitTestCollection() {
 		var magic3Skill = objClone(magicSkill);
 		magic3Skill.name = "Magic3";
 
-		var api = new API;
-		var learning = { ok : 1, learning : { magic : magicSkill } }
-		api.setAPIOverride("skills.listAll", { ok : 1, items : { magic : magicSkill, magic2 : magic2Skill, magic3 : magic3Skill } });
-		api.setAPIOverride("skills.listAvailable", { ok : 1, skills : { magic : magicSkill, magic3 : magic3Skill, magic2 : magic2Skill } });
-		api.setAPIOverride("skills.listLearned", { ok : 1, skills : {} });
-		api.setAPIOverride("skills.listLearning", learning); 
-
-		var storage = new StorageKey(new LocalStorage, "x");
-		var origQueue = ["magic2", "magic3"];
-		storage.set(origQueue.toString());
-		var testQueue = new QueueInterface(api, storage);
-
-		testQueue.api.call("skills.listLearning", {}, function(learningEvent) {
-			logTestResult(testName, objEquals(testQueue.skillQueue.getQueue(), origQueue) && objEquals(learningEvent, learning));
-		});
+		genericSkillLoadQueueTest(testName, 
+			{ ok : 1, items : { magic : magicSkill, magic2 : magic2Skill, magic3 : magic3Skill } },
+			{ ok : 1, skills : { magic : magicSkill, magic3 : magic3Skill, magic2 : magic2Skill } },
+			{ ok : 1, skills : {} },
+			{ ok : 1, learning : { magic : magicSkill } },
+			["magic2", "magic3"]
+		);
 	}
 
 	function test_skillLoadQueueMiddleLearnable(testName) {
@@ -377,21 +397,13 @@ function UnitTestCollection() {
 		var magic3Skill = objClone(magicSkill);
 		magic3Skill.name = "Magic3";
 
-		var api = new API;
-		var learning = { ok : 1, learning : { magic : magicSkill } }
-		api.setAPIOverride("skills.listAll", { ok : 1, items : { magic : magicSkill, magic2 : magic2Skill, magic3 : magic3Skill } });
-		api.setAPIOverride("skills.listAvailable", { ok : 1, skills : { magic2 : magic2Skill } });
-		api.setAPIOverride("skills.listLearned", { ok : 1, skills : {} });
-		api.setAPIOverride("skills.listLearning", learning); 
-
-		var storage = new StorageKey(new LocalStorage, "x");
-		var origQueue = ["magic3", "magic2"];
-		storage.set(origQueue.toString());
-		var testQueue = new QueueInterface(api, storage);
-
-		testQueue.api.call("skills.listLearning", {}, function(learningEvent) {
-			logTestResult(testName, objEquals(testQueue.skillQueue.getQueue(), origQueue) && objEquals(learningEvent, learning));
-		});
+		genericSkillLoadQueueTest(testName,
+			{ ok : 1, items : { magic : magicSkill, magic2 : magic2Skill, magic3 : magic3Skill } },
+			{ ok : 1, skills : { magic2 : magic2Skill } },
+			{ ok : 1, skills : {} },
+			{ ok : 1, learning : { magic : magicSkill } },
+			["magic3", "magic2"]
+		); 
 	}
 
 	function test_skillLoadQueueNoLearnable(testName) {
@@ -399,21 +411,13 @@ function UnitTestCollection() {
 		var magic2Skill = objClone(magicSkill);
 		magic2Skill.name = "Magic2";
 
-		var api = new API;
-		var learning = { ok : 1, learning : { magic : magicSkill } }
-		api.setAPIOverride("skills.listAll", { ok : 1, items : { magic : magicSkill, magic2 : magic2Skill } });
-		api.setAPIOverride("skills.listAvailable", { ok : 1, skills : {} });
-		api.setAPIOverride("skills.listLearned", { ok : 1, skills : {} });
-		api.setAPIOverride("skills.listLearning", learning); 
-
-		var storage = new StorageKey(new LocalStorage, "x");
-		var origQueue = ["magic2"];
-		storage.set(origQueue.toString());
-		var testQueue = new QueueInterface(api, storage);
-
-		testQueue.api.call("skills.listLearning", {}, function(learningEvent) {
-			logTestResult(testName, objEquals(testQueue.skillQueue.getQueue(), origQueue) && objEquals(learningEvent, learning));
-		});
+		genericSkillLoadQueueTest(testName,
+			{ ok : 1, items : { magic : magicSkill, magic2 : magic2Skill } },
+			{ ok : 1, skills : {} },
+			{ ok : 1, skills : {} },
+			{ ok : 1, learning : { magic : magicSkill } },
+			["magic2"]
+		); 
 	}
 
 	var testResults = [];
