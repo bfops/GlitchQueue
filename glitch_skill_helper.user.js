@@ -705,7 +705,7 @@ function QueueInterface(api, storageKey) {
 			+ '</div>'
 			+ '</li>').hide();
 		$('#skillQueue').append(skillQItem);
-		$('#'+ skillId + '_skillRemoveLink').click(function() { skillQRemoveLink_onClick(skillId); }.bind(this));
+		$('#'+ skillId + '_skillRemoveLink').click(function() { this.skillQRemoveLink_onClick(skillId); }.bind(this));
 		skillQItem.fadeIn('slow');
 	}
 
