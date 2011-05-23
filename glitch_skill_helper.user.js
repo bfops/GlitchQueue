@@ -319,33 +319,6 @@ function UnitTestCollection() {
 		});
 	}
 
-	function test_skillLoadNoQueue(testName) {
-		var magicSkill = { name : "Magic", total_time : 10, time_remaining : 10 };
-
-		var api = new API;
-		var learning = { ok : 1, learning : { magic : magicSkill } }
-		api.setAPIOverride("skills.listAll", { ok : 1, items : { magic : magicSkill } });
-		api.setAPIOverride("skills.listAvailable", { ok : 1, skills : { magic : magicSkill } });
-		api.setAPIOverride("skills.listLearned", { ok : 1, skills : {} });
-		api.setAPIOverride("skills.listLearning", learning);
-
-		var testQueue, learningEvent;
-		// Log the result after the QueueInterface constructor completed AND skills.listLearning has been called from the API.
-		var logResult = new SignalCounter(2, function() {
-			logTestResult(testName, objEquals(testQueue.skillQueue.getQueue(), []) && objEquals(learningEvent, learning));
-		});
-
-		api.setAPICallback("skills.listLearning", function(e) {
-			// TODO: mutex
-			api.clearAPICallback("skills.listLearning");
-			learningEvent = e;
-			logResult.sendSignal();
-		});
-		testQueue = new QueueInterface(api, new StorageKey(new LocalStorage, "x"));
-
-		logResult.sendSignal();
-	}
-
 	function genericSkillLoadQueueTest(testName, allOverride, availableOverride, learnedOverride, learningOverride, origQueue) {
 		var api = new API;
 		api.setAPIOverride("skills.listAll", allOverride);
@@ -372,6 +345,18 @@ function UnitTestCollection() {
 		testQueue = new QueueInterface(api, storage);
 
 		logResult.sendSignal();
+	}
+
+	function test_skillLoadNoQueue(testName) {
+		var magicSkill = { name : "Magic", total_time : 10, time_remaining : 10 };
+
+		genericSkillLoadQueueTest(testName,
+			{ ok : 1, items : { magic : magicSkill } },
+			{ ok : 1, skills : { magic : magicSkill } },
+			{ ok : 1, skills : {} },
+			{ ok : 1, learning : { magic : magicSkill } },
+			[]
+		);
 	}
 
 	function test_skillLoadQueueFrontLearnable(testName) {
