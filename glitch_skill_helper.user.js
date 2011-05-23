@@ -627,10 +627,16 @@ function QueueInterface(api, storageKey) {
 	 * Displays skills in queue in sidebar
 	 */
 	this.displayQueuedItems = function() {
-		var q = objClone(this.skillQueue.getQueue());
+		var q = this.skillQueue.getQueue();
+		var newQ = [];
 		$.each(q, function(index, skillId) {
-			this.showSkillInQueue(skillId);
+			if(this.skillQueue.unlearnedSkills[skillId]) {
+				this.showSkillInQueue(skillId);
+				newQ.push(skillId);
+			}
 		}.bind(this));
+
+		this.skillQueue.saveQueue(newQ);
 	}
 
 	/**
