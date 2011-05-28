@@ -334,7 +334,7 @@ function UnitTestCollection() {
 		});
 
 		api.setAPICallback("skills.listLearning", function(e) {
-			api.clearAPICallback("Skills.listLearning");
+			api.clearAPICallback("skills.listLearning");
 			learningEvent = e;
 			logResult.sendSignal();
 		});
