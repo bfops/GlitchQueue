@@ -166,7 +166,8 @@ function SignalCounter(numberOfSignals, callback) {
 }
 
 // Run and log a collection of unit tests.
-function UnitTestCollection() {
+// [completionCallback] is the function to call when all tests are completed.
+function UnitTestCollection(completionCallback) {
 	// A unit test is a function with a specific description.
 	function UnitTest(func, name) {
 		this.run = function() {
@@ -451,6 +452,9 @@ function UnitTestCollection() {
 				log("Test " + (test["result"] ? "succeeded" : "failed") + ": " + test["name"]);
 			});
 			log(numberSucceeded + "/" + testResults.length + " tests succeeded.");
+
+			if(completionCallback)
+				completionCallback(numberSucceeded == testResults.length);
 		}
 	}
 
