@@ -847,10 +847,7 @@ function QueueInterface(api, storageKey) {
 } // end: QueueInterface()
 
 $(document).ready(function() {
-	if(unittest) {
-		log("In unit testing mode.");
-		var unittests = new UnitTestCollection;
-	} else {
+	function runScript() {
 		if(!window.localStorage) {
 			log('localStorage is not supported in this browser.');
 			return;
@@ -866,5 +863,21 @@ $(document).ready(function() {
 		var queueInterface = new QueueInterface(new API, new StorageKey(window.localStorage, "glitch_SkillQueue_" + playerTSID));
 		setUpGUI(queueInterface);
 	}
-});
 
+	if(unittest) {
+		function testComplete(allSucceeded) {
+			if(allSucceeded)
+				runScript();
+			else {
+				var error = "Not all unit tests passed! Aboring script.";
+				log(error);
+				alert(error);
+			}
+		}
+
+		log("In unit testing mode.");
+		var unittests = new UnitTestCollection(testComplete);
+	}
+	else
+		runScript();
+});
