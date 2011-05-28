@@ -319,18 +319,32 @@ function UnitTestCollection() {
 		});
 	}
 
-	function genericSkillLoadQueueTest(testName, allOverride, availableOverride, learnedOverride, learningOverride, origQueue) {
+	// A generic test to override API calls with [allOverride], [availableOverride], [learnedOverride], and [learningOverride].
+	// A QueueInterface object is created with the overrides, then all the API calls are checked to make sure the proper changes have occurred, to [finalAvailable], [finalLearned], [finalLearning] and [finalQueue].
+	function genericSkillLoadQueueTest(testName, allOverride, availableOverride, learnedOverride, learningOverride, origQueue, finalAvailable, finalLearned, finalLearning, finalQueue) {
 		var api = new API;
 		api.setAPIOverride("skills.listAll", allOverride);
 		api.setAPIOverride("skills.listAvailable", availableOverride);
 		api.setAPIOverride("skills.listLearned", learnedOverride); 
 		api.setAPIOverride("skills.listLearning", learningOverride);
 
-		var testQueue, learningEvent;
+		var testQueue, availableEvent, learnedEvent, learningEvent;
 		// The test is only finished after the QueueInterface constructor has completed AND skills.listLearning has been called from the API.
-		var logResult = new SignalCounter(2, function() {
-			// Success occurred if nothing has changed.
-			logTestResult(testName, objEquals(testQueue.skillQueue.getQueue(), origQueue) && objEquals(learningEvent, learningOverride));
+		var logResult = new SignalCounter(4, function() {
+			logTestResult(testName, objEquals(testQueue.skillQueue.getQueue(), finalQueue) && objEquals(availableEvent, finalAvailable) && objEquals(learnedEvent, finalLearned)
+			&& objEquals(learningEvent, finalLearning));
+		});
+
+		api.setAPICallback("skills.listAvailable", function(e) {
+			api.clearAPICallback("skills.listAvailable");
+			availableEvent = e;
+			logResult.sendSignal();
+		});
+
+		api.setAPICallback("skills.listLearned", function(e) {
+			api.clearAPICallback("skills.listLearned");
+			learnedEvent = e;
+			logResult.sendSignal();
 		});
 
 		api.setAPICallback("skills.listLearning", function(e) {
@@ -347,10 +361,15 @@ function UnitTestCollection() {
 		logResult.sendSignal();
 	}
 
+	// A wrapper for genericSkillLoadQueueTest, where no changes are supposed to occur.
+	function genericSkillLoadQueueNoChangeTest(testName, allOverride, availableOverride, learnedOverride, learningOverride, origQueue) {
+		genericSkillLoadQueueTest(testName, allOverride, availableOverride, learnedOverride, learningOverride, origQueue, availableOverride, learnedOverride, learningOverride, origQueue);
+	}
+
 	function test_skillLoadNoQueue(testName) {
 		var magicSkill = { name : "Magic", total_time : 10, time_remaining : 10 };
 
-		genericSkillLoadQueueTest(testName,
+		genericSkillLoadQueueNoChangeTest(testName,
 			{ ok : 1, items : { magic : magicSkill } },
 			{ ok : 1, skills : { magic : magicSkill } },
 			{ ok : 1, skills : {} },
@@ -366,7 +385,7 @@ function UnitTestCollection() {
 		var magic3Skill = objClone(magicSkill);
 		magic3Skill.name = "Magic3";
 
-		genericSkillLoadQueueTest(testName, 
+		genericSkillLoadQueueNoChangeTest(testName, 
 			{ ok : 1, items : { magic : magicSkill, magic2 : magic2Skill, magic3 : magic3Skill } },
 			{ ok : 1, skills : { magic : magicSkill, magic3 : magic3Skill, magic2 : magic2Skill } },
 			{ ok : 1, skills : {} },
@@ -382,7 +401,7 @@ function UnitTestCollection() {
 		var magic3Skill = objClone(magicSkill);
 		magic3Skill.name = "Magic3";
 
-		genericSkillLoadQueueTest(testName,
+		genericSkillLoadQueueNoChangeTest(testName,
 			{ ok : 1, items : { magic : magicSkill, magic2 : magic2Skill, magic3 : magic3Skill } },
 			{ ok : 1, skills : { magic2 : magic2Skill } },
 			{ ok : 1, skills : {} },
@@ -396,7 +415,7 @@ function UnitTestCollection() {
 		var magic2Skill = objClone(magicSkill);
 		magic2Skill.name = "Magic2";
 
-		genericSkillLoadQueueTest(testName,
+		genericSkillLoadQueueNoChangeTest(testName,
 			{ ok : 1, items : { magic : magicSkill, magic2 : magic2Skill } },
 			{ ok : 1, skills : {} },
 			{ ok : 1, skills : {} },
@@ -410,7 +429,7 @@ function UnitTestCollection() {
 		var magic2Skill = objClone(magicSkill);
 		magic2Skill.name = "Magic2";
 
-		genericSkillLoadQueueTest(testName,
+		genericSkillLoadQueueNoChangeTest(testName,
 			{ ok : 1, items : { magic : magicSkill, magic2 : magic2Skill } },
 			{ ok : 1, skills : {} },
 			{ ok : 1, skills : {} },
