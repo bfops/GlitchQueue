@@ -11,6 +11,7 @@
 
 // Don't change this unless you know what a unit test is, and you want to enable them, instead of the regular script.
 var unittest = true;
+var POLL_INTERVAL_UNLEARNABLE = 1 * 60; // poll interval when all the skills in the queue are unlearnable
 var POLL_INTERVAL_DISABLED = 5 * 60; // poll interval when game is disabled
 var POLL_INTERVAL_ERROR = 1 * 60; // poll interval when unknown error is encountered, maybe 500 errs
 
@@ -821,7 +822,11 @@ function QueueInterface(api, storageKey) {
 			// Refresh both caches.
 			this.skillQueue.doUnlearnedSkillsCache(this.api);
 			this.skillQueue.doAvailableSkillsCache(this.api, function(x) {
-				if(q.length > 0 && rotateQueueToLearnableSkill()) trySkillSubmit(q[0]);
+				if(q.length > 0)
+					if(rotateQueueToLearnableSkill())
+						trySkillSubmit(q[0]);
+					else
+						this.renewPollTimer(POLL_INTERVAL_UNLEARNABLE);
 			}.bind(this));
 
 		}.bind(this));	// end: this.api.call("skills.listLearning", {}, function(e) {
