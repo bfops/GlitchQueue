@@ -12,7 +12,7 @@
 // Don't change this unless you know what a unit test is, and you want to enable them, instead of the regular script.
 var unittest = true;
 var POLL_INTERVAL_DISABLED = 5 * 60; // poll interval when game is disabled
-var POLL_INTERVAL_ERROR = 60;	// poll interval when unknown error is encountered, maybe 500 errs
+var POLL_INTERVAL_ERROR = 1 * 60; // poll interval when unknown error is encountered, maybe 500 errs
 
 // **************************************************************************
 // ------------------------ DO NOT EDIT FROM HERE ON ------------------------
