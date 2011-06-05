@@ -782,8 +782,10 @@ function QueueInterface(api, storageKey) {
 					$('#' + skillId + '_skill_error').html('');
 					$('#' + skillId + '_skill_error').hide();
 					$('#' + skillId + '_skillRemoveLink').hide();
-					currentSkillExpires = this.skillQueue.availableSkills[skillId].time_remaining + time();
-					this.renewPollTimer(this.skillQueue.availableSkills[skillId].time_remaining);
+					var skill = this.skillQueue.availableSkills[skillId];
+					currentSkillExpires = skill.time_remaining + time();
+					this.renewPollTimer(skill.time_remaining);
+					log("Started learning " + skill.name + ".");
 				} else {
 					currentSkillExpires = 0;
 					var skillError = $('#' + skillId + '_skill_error');
@@ -825,8 +827,10 @@ function QueueInterface(api, storageKey) {
 				if(q.length > 0)
 					if(rotateQueueToLearnableSkill())
 						trySkillSubmit(q[0]);
-					else
+					else {
+						log("No learnable skills in queue.");
 						this.renewPollTimer(POLL_INTERVAL_UNLEARNABLE);
+					}
 			}.bind(this));
 
 		}.bind(this));	// end: this.api.call("skills.listLearning", {}, function(e) {
