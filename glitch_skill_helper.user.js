@@ -742,12 +742,14 @@ function QueueInterface(api, storageKey) {
 	 * Submit skill for learning
 	 */
 	this.submitSkill = function(skillId, handler) {
+		log("Submitting skill id " + skillId);
 		this.api.call("skills.learn", { 'skill_id' : skillId }, function(e) {
 			if(e.ok) {
 				this.skillQueue.skillLearning[skillId] = this.skillQueue.availableSkills[skillId];
 				if(uiQTimer) window.clearTimeout(uiQTimer);
 				uiQTimer = window.setTimeout(function() { updateSkillQueueProgress(skillId); }, 1000);
 			}
+
 			if(handler) handler(e);
 		}.bind(this));
 	}
@@ -762,7 +764,7 @@ function QueueInterface(api, storageKey) {
 		var q = this.skillQueue.getQueue();
 
 		// Rotates the queue until a learnable skill is reached. Returns true iff there is a learnable skill in the queue.
-		function rotateQueueToLearnableSkill() {
+		this.rotateQueueToLearnableSkill = function() {
 			// move all unlearnable skills to the end of the queue
 			var unlearnableCount = 0;
 			for(; unlearnableCount < q.length && !this.skillQueue.availableSkills[q[0]]; ++unlearnableCount) {
@@ -775,8 +777,8 @@ function QueueInterface(api, storageKey) {
 			return (unlearnableCount < q.length);
 		}
 
-		function trySkillSubmit(skillId) {
-			submitSkill(skillId, function(e) {	// handle submit skill sucess/failure
+		this.trySkillSubmit = function(skillId) {
+			this.submitSkill(skillId, function(e) {	// handle submit skill sucess/failure
 				if(e.ok) {	// submitted successfully
 					this.skillQueue.removeSkillFromQueue(skillId);
 					$('#' + skillId + '_skill_error').html('');
@@ -794,6 +796,7 @@ function QueueInterface(api, storageKey) {
 						skillError.html('Game is disabled.');
 						this.renewPollTimer(POLL_INTERVAL_DISABLED);	// try again later
 					} else {
+						log("Error submitting skill: " + e.error + ". Polling again in " + (POLL_INTERVAL_ERROR / 60) + " minutes.");
 						skillError.html('Error: ' + e.error);
 						this.renewPollTimer(POLL_INTERVAL_ERROR);	// try again later for unknown error
 	        			}
@@ -821,16 +824,20 @@ function QueueInterface(api, storageKey) {
 
 			log("No skills are being learned.");
 
+			if(q.length == 0) {
+				log("No skills in queue.");
+				return;
+			}
+
 			// Refresh both caches.
 			this.skillQueue.doUnlearnedSkillsCache(this.api);
 			this.skillQueue.doAvailableSkillsCache(this.api, function(x) {
-				if(q.length > 0)
-					if(rotateQueueToLearnableSkill())
-						trySkillSubmit(q[0]);
-					else {
-						log("No learnable skills in queue.");
-						this.renewPollTimer(POLL_INTERVAL_UNLEARNABLE);
-					}
+				if(this.rotateQueueToLearnableSkill())
+					this.trySkillSubmit(q[0]);
+				else {
+					log("No learnable skills in queue.");
+					this.renewPollTimer(POLL_INTERVAL_UNLEARNABLE);
+				}
 			}.bind(this));
 
 		}.bind(this));	// end: this.api.call("skills.listLearning", {}, function(e) {
