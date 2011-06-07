@@ -1,10 +1,7 @@
 // ==UserScript==
 // @name           Glitch Skill Helper
-// @include        http://alpha.glitch.com
 // @include        http://beta.glitch.com
-// @include        http://alpha.glitch.com/
 // @include        http://beta.glitch.com/
-// @include        http://alpha.glitch.com/#
 // @include        http://beta.glitch.com/#
 // @description	   Manages skill-queuing for learning in Glitch.
 // ==/UserScript==
@@ -13,7 +10,7 @@
 var unittest = true;
 var POLL_INTERVAL_UNLEARNABLE = 1 * 60; // poll interval when all the skills in the queue are unlearnable
 var POLL_INTERVAL_DISABLED = 5 * 60; // poll interval when game is disabled
-var POLL_INTERVAL_ERROR = 1 * 60; // poll interval when unknown error is encountered, maybe 500 errs
+var POLL_INTERVAL_ERROR = 1 * 60; // poll interval when unknown error is encountered.
 
 // **************************************************************************
 // ------------------------ DO NOT EDIT FROM HERE ON ------------------------
@@ -224,7 +221,7 @@ function UnitTestCollection(completionCallback) {
 		var removeable = new StorageKey(storage, "Pokemon");
 		removeable.remove();
 
-		logTestResult(testName, storageKey.get() == 5 && storage.getItem("hellSpawn__!!") == "RobotGymnast" && typeof(storage.getItem("Pokemon")) == "undefined");
+		logTestResult(testName, storageKey.get() == 5 && storage.getItem("hellSpawn__!!") == "RobotGymnast" && storage.getItem("Pokemon") == undefined);
 	}
 
 	function test_objEquals(testName) {
@@ -738,20 +735,37 @@ function QueueInterface(api, storageKey) {
 		skillQItem.fadeIn('slow');
 	}
 
-	/**
-	 * Submit skill for learning
-	 */
-	this.submitSkill = function(skillId, handler) {
-		log("Submitting skill id " + skillId);
-		this.api.call("skills.learn", { 'skill_id' : skillId }, function(e) {
-			if(e.ok) {
+	this.trySkillSubmit = function(skillId) {
+		this.api.call("skills.learn", { skill_id : skillId }, function(e) {	// handle submit skill sucess/failure
+			if(e.ok) {	// submitted successfully
 				this.skillQueue.skillLearning[skillId] = this.skillQueue.availableSkills[skillId];
-				if(uiQTimer) window.clearTimeout(uiQTimer);
-				uiQTimer = window.setTimeout(function() { updateSkillQueueProgress(skillId); }, 1000);
-			}
+				if(this.uiQTimer) window.clearTimeout(uiQTimer);
+					this.uiQTimer = window.setTimeout(function() { updateSkillQueueProgress(skillId); }, 1000);
 
-			if(handler) handler(e);
-		}.bind(this));
+				this.skillQueue.removeSkillFromQueue(skillId);
+				$('#' + skillId + '_skill_error').html('');
+				$('#' + skillId + '_skill_error').hide();
+				$('#' + skillId + '_skillRemoveLink').hide();
+				var skill = this.skillQueue.availableSkills[skillId];
+				currentSkillExpires = skill.time_remaining + time();
+				this.renewPollTimer(skill.time_remaining);
+				log("Started learning " + skill.name + ".");
+			} else {
+				currentSkillExpires = 0;
+				var skillError = $('#' + skillId + '_skill_error');
+
+				if(e.error == "The game is disabled.") { // Argh game is disabled
+					log("Game is disabled. Checking again in " + POLL_INTERVAL_DISABLED + " seconds.");
+					this.renewPollTimer(POLL_INTERVAL_DISABLED);	// try again later
+				} else {
+					log("Error submitting skill: " + e.error + ". Checking again in " + POLL_INTERVAL_ERROR + " seconds.");
+					this.renewPollTimer(POLL_INTERVAL_ERROR);	// try again later for unknown error
+        			}
+
+				skillError.html('Error: ' + e.error);
+				skillError.fadeIn('slow');
+			}
+		}.bind(this));	// end: submitSkill(q[0], function(e) {
 	}
 
 	/**
@@ -765,7 +779,7 @@ function QueueInterface(api, storageKey) {
 
 		// Rotates the queue until a learnable skill is reached. Returns true iff there is a learnable skill in the queue.
 		this.rotateQueueToLearnableSkill = function() {
-			// move all unlearnable skills to the end of the queue
+			// Move all unlearnable skills to the end of the queue.
 			var unlearnableCount = 0;
 			for(; unlearnableCount < q.length && !this.skillQueue.availableSkills[q[0]]; ++unlearnableCount) {
 				var skillId = q[0];
@@ -777,43 +791,18 @@ function QueueInterface(api, storageKey) {
 			return (unlearnableCount < q.length);
 		}
 
-		this.trySkillSubmit = function(skillId) {
-			this.submitSkill(skillId, function(e) {	// handle submit skill sucess/failure
-				if(e.ok) {	// submitted successfully
-					this.skillQueue.removeSkillFromQueue(skillId);
-					$('#' + skillId + '_skill_error').html('');
-					$('#' + skillId + '_skill_error').hide();
-					$('#' + skillId + '_skillRemoveLink').hide();
-					var skill = this.skillQueue.availableSkills[skillId];
-					currentSkillExpires = skill.time_remaining + time();
-					this.renewPollTimer(skill.time_remaining);
-					log("Started learning " + skill.name + ".");
-				} else {
-					currentSkillExpires = 0;
-					var skillError = $('#' + skillId + '_skill_error');
-					if(e.error == "The game is disabled.") { // Argh game is disabled
-						log("Game is disabled. Checking again in " + (POLL_INTERVAL_DISABLED / 60) + " minutes.");
-						skillError.html('Game is disabled.');
-						this.renewPollTimer(POLL_INTERVAL_DISABLED);	// try again later
-					} else {
-						log("Error submitting skill: " + e.error + ". Polling again in " + (POLL_INTERVAL_ERROR / 60) + " minutes.");
-						skillError.html('Error: ' + e.error);
-						this.renewPollTimer(POLL_INTERVAL_ERROR);	// try again later for unknown error
-	        			}
-					skillError.fadeIn('slow');
-				}
-			}.bind(this));	// end: submitSkill(q[0], function(e) {
-		}
-
 		this.api.call("skills.listLearning", {}, function(e) {
-			if(!e.ok) { log("Oops, poll broke while trying to check learning. " + e.error); return; }
+			if(!e.ok) {
+				log("Error when checking for the current skill: " + e.error);
+				return;
+			}
 
 			if(e.learning) {
 				for(skillId in e.learning) {
 					// Another skill was selected outside of this script.
 					var skill = e.learning[skillId];
 					var remaining = skill.time_remaining;
-					log("Skill " + skill.name + " selected outside of this script. Checking back in " + Math.round(remaining / 60) + " minutes.");
+					log("Skill " + skill.name + " selected outside of this script. Checking back on completion."); 
 					currentSkillExpires = time() + remaining;
 					// Poll once the skill is done.
 					this.renewPollTimer(remaining);
@@ -875,7 +864,7 @@ $(document).ready(function() {
 			return;
 		}
 
-		log("Ding! Script started.");
+		log("Script started.");
 		var queueInterface = new QueueInterface(new API, new StorageKey(window.localStorage, "glitch_SkillQueue_" + playerTSID));
 		setUpGUI(queueInterface);
 	}
@@ -885,7 +874,7 @@ $(document).ready(function() {
 			if(allSucceeded)
 				runScript();
 			else {
-				var error = "Not all unit tests passed! Aboring script.";
+				var error = "Not all unit tests passed! Stopping script.";
 				log(error);
 				alert(error);
 			}
