@@ -12,10 +12,6 @@ var POLL_INTERVAL_UNLEARNABLE = 1 * 60; // poll interval when all the skills in 
 var POLL_INTERVAL_DISABLED = 5 * 60; // poll interval when game is disabled
 var POLL_INTERVAL_ERROR = 1 * 60; // poll interval when unknown error is encountered.
 
-// **************************************************************************
-// ------------------------ DO NOT EDIT FROM HERE ON ------------------------
-// **************************************************************************
-
 // Returns [a] \ [b] (i.e. all elements in [a] which are not in [b]).
 function relativeComplement(a, b) {
 	var ret = {};
@@ -468,6 +464,7 @@ function GlitchQueue(queueStorageKey) {
 	this.queueStorageKey = queueStorageKey;
 	this.availableSkills = {};
 	this.unlearnedSkills = {};
+	this.skillLearning = {};
 
 }	// end: GlitchQueue()
 
@@ -492,30 +489,28 @@ function QueueInterface(api, storageKey) {
 	 * Updates UI progress bar for the skill being learnt
 	 */
 	this.updateSkillQueueProgress = function(skillId) {
-		if(this.skillQueue.skillLearning[skillId]) {
-			var skill = this.skillQueue.skillLearning[skillId];
-			var remaining = currentSkillExpires - time();
-			var percentCompleted = (100 - (remaining / skill.total_time * 100));
-			$('#' + skillId + '_skill_indicator').show();
+		var skill = this.skillQueue.skillLearning;
+		var remaining = currentSkillExpires - time();
+		var percentCompleted = (100 - (remaining / skill.total_time * 100));
+		$('#' + skillId + '_skill_indicator').show();
 
-			if(remaining > 0) {
-				var prefix = "";
-				if(remaining <= 5) prefix = 'OMG OMG OMG OMG ';
-				else if(remaining <= 10) prefix = 'Almost there! ';
-				else if(remaining <= 15) prefix = 'You can do it! ';
-				else if(remaining <= 20) prefix = 'Oh, so close... ';
+		if(remaining > 0) {
+			var prefix = "";
+			if(remaining <= 5) prefix = 'OMG OMG OMG OMG ';
+			else if(remaining <= 10) prefix = 'Almost there! ';
+			else if(remaining <= 15) prefix = 'You can do it! ';
+			else if(remaining <= 20) prefix = 'Oh, so close... ';
 
-				$('#' + skillId + '_skill_remaining').html(prefix + format_sec(remaining));
-				$('#' + skillId + '_skill_indicator').width((100 - (remaining / skill.total_time * 100)) + '%');
+			$('#' + skillId + '_skill_remaining').html(prefix + format_sec(remaining));
+			$('#' + skillId + '_skill_indicator').width((100 - (remaining / skill.total_time * 100)) + '%');
 
-				if(uiQTimer) window.clearTimeout(uiQTimer);
-				uiQTimer = window.setTimeout(function() { updateSkillQueueProgress(skillId) }, 1000);	// update every 1 second
-			} else {
-				$('#' + skillId + '_skill_remaining').html('Done!');
-				window.clearTimeout(uiQTimer);	// clear the update
-				uiQTimer = 0;
-				$('#' + skillId + '_skill_indicator').width($('#' + skillId + '_skill_progress').innerWidth());
-			}
+			if(uiQTimer) window.clearTimeout(uiQTimer);
+			uiQTimer = window.setTimeout(function() { this.updateSkillQueueProgress(skillId) }.bind(this), 1000);	// update every 1 second
+		} else {
+			$('#' + skillId + '_skill_remaining').html('Done!');
+			window.clearTimeout(uiQTimer);	// clear the update
+			uiQTimer = 0;
+			$('#' + skillId + '_skill_indicator').width($('#' + skillId + '_skill_progress').innerWidth());
 		}
 	}
 
@@ -613,10 +608,12 @@ function QueueInterface(api, storageKey) {
 
 	this.trySkillSubmit = function(skillId) {
 		this.api.call("skills.learn", { skill_id : skillId }, function(e) {	// handle submit skill sucess/failure
+		    log("Skill learn " + skillId + " submitted with result " + e.ok);
 			if(e.ok) {	// submitted successfully
-				this.skillQueue.skillLearning[skillId] = this.skillQueue.availableSkills[skillId];
+				this.skillQueue.skillLearning = this.skillQueue.availableSkills[skillId];
+
 				if(this.uiQTimer) window.clearTimeout(uiQTimer);
-					this.uiQTimer = window.setTimeout(function() { updateSkillQueueProgress(skillId); }, 1000);
+				this.uiQTimer = window.setTimeout(function() { this.updateSkillQueueProgress(skillId); }.bind(this), 1000);
 
 				this.skillQueue.removeSkillFromQueue(skillId);
 				$('#' + skillId + '_skill_error').html('');
@@ -641,7 +638,7 @@ function QueueInterface(api, storageKey) {
 				skillError.html('Error: ' + e.error);
 				skillError.fadeIn('slow');
 			}
-		}.bind(this));	// end: submitSkill(q[0], function(e) {
+		}.bind(this));
 	}
 
 	/**
