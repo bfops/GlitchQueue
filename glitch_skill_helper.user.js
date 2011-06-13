@@ -318,125 +318,6 @@ function UnitTestCollection(completionCallback) {
 		});
 	}
 
-	// A generic test to override API calls with [allOverride], [availableOverride], [learnedOverride], and [learningOverride].
-	// A QueueInterface object is created with the overrides, then all the API calls are checked to make sure the proper changes have occurred, to [finalAvailable], [finalLearned], [finalLearning] and [finalQueue].
-	function genericSkillLoadQueueTest(testName, allOverride, availableOverride, learnedOverride, learningOverride, origQueue, finalAvailable, finalLearned, finalLearning, finalQueue) {
-		var api = new API;
-		api.setAPIOverride("skills.listAll", allOverride);
-		api.setAPIOverride("skills.listAvailable", availableOverride);
-		api.setAPIOverride("skills.listLearned", learnedOverride); 
-		api.setAPIOverride("skills.listLearning", learningOverride);
-
-		var testQueue, availableEvent, learnedEvent, learningEvent;
-		// The test is only finished after the QueueInterface constructor has completed AND skills.listLearning has been called from the API.
-		var logResult = new SignalCounter(4, function() {
-			logTestResult(testName, objEquals(testQueue.skillQueue.getQueue(), finalQueue) && objEquals(availableEvent, finalAvailable) && objEquals(learnedEvent, finalLearned)
-			&& objEquals(learningEvent, finalLearning));
-		});
-
-		api.setAPICallback("skills.listAvailable", function(e) {
-			api.clearAPICallback("skills.listAvailable");
-			availableEvent = e;
-			logResult.sendSignal();
-		});
-
-		api.setAPICallback("skills.listLearned", function(e) {
-			api.clearAPICallback("skills.listLearned");
-			learnedEvent = e;
-			logResult.sendSignal();
-		});
-
-		api.setAPICallback("skills.listLearning", function(e) {
-			api.clearAPICallback("skills.listLearning");
-			learningEvent = e;
-			logResult.sendSignal();
-		});
-
-		var storage = new StorageKey(new LocalStorage, "x");
-		storage.set(origQueue.toString());
-
-		testQueue = new QueueInterface(api, storage);
-
-		logResult.sendSignal();
-	}
-
-	// A wrapper for genericSkillLoadQueueTest, where no changes are supposed to occur.
-	function genericSkillLoadQueueNoChangeTest(testName, allOverride, availableOverride, learnedOverride, learningOverride, origQueue) {
-		genericSkillLoadQueueTest(testName, allOverride, availableOverride, learnedOverride, learningOverride, origQueue, availableOverride, learnedOverride, learningOverride, origQueue);
-	}
-
-	function test_skillLoadNoQueue(testName) {
-		var magicSkill = { name : "Magic", total_time : 10, time_remaining : 10 };
-
-		genericSkillLoadQueueNoChangeTest(testName,
-			{ ok : 1, items : { magic : magicSkill } },
-			{ ok : 1, skills : { magic : magicSkill } },
-			{ ok : 1, skills : {} },
-			{ ok : 1, learning : { magic : magicSkill } },
-			[]
-		);
-	}
-
-	function test_skillLoadQueueFrontLearnable(testName) {
-		var magicSkill = { name : "Magic", total_time : 10, time_remaining : 10 };
-		var magic2Skill = objClone(magicSkill);
-		magic2Skill.name = "Magic2";
-		var magic3Skill = objClone(magicSkill);
-		magic3Skill.name = "Magic3";
-
-		genericSkillLoadQueueNoChangeTest(testName, 
-			{ ok : 1, items : { magic : magicSkill, magic2 : magic2Skill, magic3 : magic3Skill } },
-			{ ok : 1, skills : { magic : magicSkill, magic3 : magic3Skill, magic2 : magic2Skill } },
-			{ ok : 1, skills : {} },
-			{ ok : 1, learning : { magic : magicSkill } },
-			["magic2", "magic3"]
-		);
-	}
-
-	function test_skillLoadQueueMiddleLearnable(testName) {
-		var magicSkill = { name : "Magic", total_time : 10, time_remaining : 10 };
-		var magic2Skill = objClone(magicSkill);
-		magic2Skill.name = "Magic2";
-		var magic3Skill = objClone(magicSkill);
-		magic3Skill.name = "Magic3";
-
-		genericSkillLoadQueueNoChangeTest(testName,
-			{ ok : 1, items : { magic : magicSkill, magic2 : magic2Skill, magic3 : magic3Skill } },
-			{ ok : 1, skills : { magic2 : magic2Skill } },
-			{ ok : 1, skills : {} },
-			{ ok : 1, learning : { magic : magicSkill } },
-			["magic3", "magic2"]
-		); 
-	}
-
-	function test_skillLoadQueueNoLearnable(testName) {
-		var magicSkill = { name : "Magic", total_time : 10, time_remaining : 10 };
-		var magic2Skill = objClone(magicSkill);
-		magic2Skill.name = "Magic2";
-
-		genericSkillLoadQueueNoChangeTest(testName,
-			{ ok : 1, items : { magic : magicSkill, magic2 : magic2Skill } },
-			{ ok : 1, skills : {} },
-			{ ok : 1, skills : {} },
-			{ ok : 1, learning : { magic : magicSkill } },
-			["magic2"]
-		); 
-	}
-
-	function test_noSkillLoadNoQueue(testName) {
-		var magicSkill = { name : "Magic", total_time : 10, time_remaining : 10 };
-		var magic2Skill = objClone(magicSkill);
-		magic2Skill.name = "Magic2";
-
-		genericSkillLoadQueueNoChangeTest(testName,
-			{ ok : 1, items : { magic : magicSkill, magic2 : magic2Skill } },
-			{ ok : 1, skills : {} },
-			{ ok : 1, skills : {} },
-			{ ok : 1, learning : {} },
-			[]
-		);
-	}
-
 	var testResults = [];
 	var numberSucceeded = 0;
 
@@ -465,12 +346,7 @@ function UnitTestCollection(completionCallback) {
 		new UnitTest(test_apiOverriding, "API wrapper return-hooking"),
 		new UnitTest(test_apiCallbacks, "API wrapper callback calls"),
 		new UnitTest(test_addToQueue, "Adding to queue"),
-		new UnitTest(test_removeFromQueue, "Removing from queue"),
-		new UnitTest(test_skillLoadNoQueue, "Skill being learned on page load, no skill queue"),
-		new UnitTest(test_skillLoadQueueFrontLearnable, "Skill being learned on page load, queue with learnable skill"),
-		new UnitTest(test_skillLoadQueueMiddleLearnable, "Skill being learned on page load, queue with learnable skill 2"),
-		new UnitTest(test_skillLoadQueueNoLearnable, "Skill being learned on page load, queue with no learnable skills"),
-		new UnitTest(test_noSkillLoadNoQueue, "Page load with no queue")/*,
+		new UnitTest(test_removeFromQueue, "Removing from queue")/*,
 		new UnitTest(test_noSkillLoadQueueFrontLearnable, "Page load with queue including learnable skill"),
 		new UnitTest(test_noSkillLoadQueueMiddleLearnable, "Page load with queue including learnable skill 2"),
 		new UnitTest(test_noSkillLoadQueueNoLearnable, "Page load with queue including no learnable skills"),
