@@ -828,6 +828,7 @@ function QueueInterface(api, storageKey)
 
     // Completetion datetime of the current skill being learned.
     this.currentSkillExpires = 0;
+
     this.pollJob = function()
     {
         log("Checking skill status...");
