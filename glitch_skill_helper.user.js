@@ -366,12 +366,12 @@ function UnitTestCollection(completionCallback)
                 testQueue.skillQueue.removeSkillFromQueue("magic", function(q2)
                 {
                     logTestResult(testName, objEquals(q2, []));
+                    if(testQueue.uiQTimer) window.clearTimeout(testQueue.uiQTimer);
+                    if(testQueue.pollQTimer) window.clearTimeout(testQueue.pollQTimer);
                 });
             });
         });
 
-        if(testQueue.uiQTimer) window.clearTimeout(testQueue.uiQTimer);
-        if(testQueue.pollQTimer) window.clearTimeout(testQueue.pollQTimer);
     }
 
     var testResults = [];
