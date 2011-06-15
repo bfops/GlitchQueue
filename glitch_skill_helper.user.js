@@ -8,13 +8,13 @@
 
 // Don't change this unless you know what a unit test is, and you want to enable them, instead of the regular script.
 var unittest = true;
-// Poll intervals for different occurances.
+// Poll intervals for different occurances (in seconds).
 // No learnable skills.
-var POLL_INTERVAL_UNLEARNABLE = 1 * 60; 
+var POLL_INTERVAL_UNLEARNABLE = 60; 
 // Game disabled.
-var POLL_INTERVAL_DISABLED = 5 * 60;
+var POLL_INTERVAL_DISABLED = 300;
 // Other error encountered.
-var POLL_INTERVAL_ERROR = 1 * 60;
+var POLL_INTERVAL_ERROR = 60;
 
 // Returns [a] \ [b] (i.e. all elements in [a] which are not in [b]).
 function relativeComplement(a, b)
