@@ -489,8 +489,7 @@ function UnitTestCollection(completionCallback)
         new UnitTest(test_addToQueue, "Adding to queue"),
         new UnitTest(test_removeFromQueue, "Removing from queue"),
         new UnitTest(test_noSkillLoadQueueFrontLearnable, "Page load with queue including learnable skill"),
-        new UnitTest(test_noSkillLoadQueueMiddleLearnable, "Page load with queue including learnable skill 2")/*,
-        new UnitTest(test_noSkillLoadQueueNoLearnable, "Page load with queue including no learnable skills")*/
+        new UnitTest(test_noSkillLoadQueueMiddleLearnable, "Page load with queue including learnable skill 2")
     ];
 
     $.each(unittests, function(i, test)
