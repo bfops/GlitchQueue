@@ -419,6 +419,41 @@ function UnitTestCollection(completionCallback)
         logResult.sendSignal();
     }
 
+    function test_noSkillLoadQueueMiddleLearnable(testName)
+    {
+        var magicSkill = { name : "Magic", total_time : 10, time_remaining : 10 };
+        var magic2Skill = objClone(magicSkill);
+        magic2Skill.name = "Magic 2";
+
+        var api = new API;
+        api.setAPIOverride("skills.listAll", { ok : 1, items : { magic : magicSkill, magic2 : magic2Skill } });
+        api.setAPIOverride("skills.listAvailable", { ok : 1, skills : { magic : magicSkill } });
+        api.setAPIOverride("skills.listLearned", { ok : 1, skills : {} });
+        api.setAPIOverride("skills.listLearning", { ok : 1, learning : {} });
+        api.setAPIOverride("skills.learn", { ok : 1 });
+
+        var storage = new StorageKey(new LocalStorage, "x");
+        storage.set(["magic2", "magic"].toString());
+
+        var testQueue;
+        var selectedArgs;
+
+        var logResult = new SignalCounter(2, function()
+        {
+            logTestResult(testName, selectedArgs.skill_id == "magic", testQueue.skillQueue.getQueue() == ["magic2"]);
+
+            if(testQueue.uiQTimer) window.clearTimeout(testQueue.uiQTimer);
+            if(testQueue.pollQTimer) window.clearTimeout(testQueue.pollQTimer);
+        });
+
+        api.setAPICallback("skills.learn", function(args, e)
+        {
+            selectedArgs = args;
+            logResult.sendSignal();
+        });
+
+        testQueue = new QueueInterface(api, storage);
+        logResult.sendSignal();
     }
 
     var testResults = [];
@@ -453,8 +488,8 @@ function UnitTestCollection(completionCallback)
         new UnitTest(test_apiCallbacks, "API wrapper callback calls"),
         new UnitTest(test_addToQueue, "Adding to queue"),
         new UnitTest(test_removeFromQueue, "Removing from queue"),
-        new UnitTest(test_noSkillLoadQueueFrontLearnable, "Page load with queue including learnable skill")/*,
-        new UnitTest(test_noSkillLoadQueueMiddleLearnable, "Page load with queue including learnable skill 2"),
+        new UnitTest(test_noSkillLoadQueueFrontLearnable, "Page load with queue including learnable skill"),
+        new UnitTest(test_noSkillLoadQueueMiddleLearnable, "Page load with queue including learnable skill 2")/*,
         new UnitTest(test_noSkillLoadQueueNoLearnable, "Page load with queue including no learnable skills")*/
     ];
 
