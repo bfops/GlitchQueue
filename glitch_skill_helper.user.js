@@ -836,19 +836,13 @@ function QueueInterface(api, storageKey)
         var q = this.skillQueue.getQueue();
 
         // Rotates the queue until a learnable skill is reached. Returns true iff there is a learnable skill in the queue.
-        this.rotateQueueToLearnableSkill = function()
+        this.getFirstLearnableQueuedSkill = function()
         {
-            // Move all unlearnable skills to the end of the queue.
-            var unlearnableCount = 0;
-            for(; unlearnableCount < q.length && !this.skillQueue.availableSkills[q[0]]; ++unlearnableCount)
-            {
-                var skillId = q[0];
-                // Move the skill to the end of the queue.
-                this.skillQueue.removeSkillFromQueue(skillId);
-                this.skillQueue.addSkillToQueue(skillId);
-            }
+            for(var i = 0; i < q.length; ++i)
+                if(this.skillQueue.availableSkills[q[i]])
+                    return q[i];
 
-            return (unlearnableCount < q.length);
+            return undefined;
         }
 
         this.api.call("skills.listLearning", {}, function(e)
@@ -887,17 +881,17 @@ function QueueInterface(api, storageKey)
             this.skillQueue.doUnlearnedSkillsCache(this.api);
             this.skillQueue.doAvailableSkillsCache(this.api, function(x)
             {
-                if(this.rotateQueueToLearnableSkill())
-                    this.trySkillSubmit(q[0]);
+                var skillId = this.getFirstLearnableQueuedSkill();
+
+                if(skillId != undefined)
+                    this.trySkillSubmit(skillId);
                 else
                 {
                     log("No learnable skills in queue.");
                     this.renewPollTimer(POLL_INTERVAL_UNLEARNABLE);
                 }
             }.bind(this));
-
         }.bind(this));
-
     }
 
     this.api = api;
