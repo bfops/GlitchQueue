@@ -369,6 +369,9 @@ function UnitTestCollection(completionCallback)
                 });
             });
         });
+
+        if(testQueue.uiQTimer) window.clearTimeout(testQueue.uiQTimer);
+        if(testQueue.pollQTimer) window.clearTimeout(testQueue.pollQTimer);
     }
 
     var testResults = [];
