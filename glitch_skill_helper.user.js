@@ -318,6 +318,7 @@ function UnitTestCollection(completionCallback)
         api.setAPIOverride("skills.listAvailable", { ok : 1, skills : { magic : magicSkill, magic2 : magic2Skill } });
         api.setAPIOverride("skills.listLearned", { ok : 1, skills : {} });
         api.setAPIOverride("skills.listLearning", { ok : 1, learning : {} });
+        api.setAPIOverride("skills.learn", { ok : 1 });
 
         var testQueue = new QueueInterface(api, new StorageKey(new LocalStorage, "x"));
 
@@ -325,7 +326,7 @@ function UnitTestCollection(completionCallback)
         {
             testQueue.skillQueue.addSkillToQueue("magic", function(q1)
             {
-                if(!objEquals(q1, ["magic"])
+                if(!objEquals(q1, ["magic"]))
                 {
                     logTestResult(testName, false);
                     return;
@@ -348,6 +349,7 @@ function UnitTestCollection(completionCallback)
         api.setAPIOverride("skills.listAvailable", { ok : 1, skills : { magic : magicSkill } });
         api.setAPIOverride("skills.listLearned", { ok : 1, skills : {} });
         api.setAPIOverride("skills.listLearning", { ok : 1, learning : {} });
+        api.setAPIOverride("skills.learn", { ok : 1 });
 
         var testQueue = new QueueInterface(api, new StorageKey(new LocalStorage, "x"));
 
