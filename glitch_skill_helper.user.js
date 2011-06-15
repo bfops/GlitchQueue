@@ -101,7 +101,7 @@ function API()
         {
             log("API call " + callName + " overriden.");
             if(handler) handler(apiReturns[callName]);
-            if(callbacks[callName]) callbacks[callName](apiReturns[callName]);
+            if(callbacks[callName]) callbacks[callName](args, apiReturns[callName]);
         }
         else
             api_call(callName, args, handler);
@@ -296,7 +296,7 @@ function UnitTestCollection(completionCallback)
         var correctCallbackCalledFirst = false;
 
         testAPI.setAPIOverride("test", {});
-        testAPI.setAPICallback("test", function (e)
+        testAPI.setAPICallback("test", function(args, e)
         {
             logTestResult(testName, correctCallbackCalledFirst);
         });
