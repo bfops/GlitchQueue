@@ -104,7 +104,16 @@ function API()
             if(callbacks[callName]) callbacks[callName](args, apiReturns[callName]);
         }
         else
-            api_call(callName, args, handler);
+        {
+            if(callbacks[callName])
+                api_call(callName, args, function(e)
+                {
+                    handler(e);
+                    callbacks[callName](args, e);
+                });
+            else
+                api_call(callName, args, handler);
+        }
     }
 
     // Override API call [apiCallName] to return [apiReturn].
