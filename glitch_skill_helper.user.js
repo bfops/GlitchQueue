@@ -15,6 +15,8 @@ var POLL_INTERVAL_UNLEARNABLE = 60;
 var POLL_INTERVAL_DISABLED = 300;
 // Other error encountered.
 var POLL_INTERVAL_ERROR = 60;
+// Interval at which to check if the skill time has changed from the estimate.
+var REPOLL_INTERVAL = 60;
 
 // Returns [a] \ [b] (i.e. all elements in [a] which are not in [b]).
 function relativeComplement(a, b)
@@ -379,6 +381,7 @@ function UnitTestCollection(completionCallback)
                     logTestResult(testName, objEquals(q2, []));
                     if(testQueue.uiQTimer) window.clearTimeout(testQueue.uiQTimer);
                     if(testQueue.pollQTimer) window.clearTimeout(testQueue.pollQTimer);
+                    if(testQueue.refreshSkillTimeTimer) window.clearTimeout(testQueue.refreshSkillTimeTimer);
                 });
             });
         });
@@ -405,16 +408,21 @@ function UnitTestCollection(completionCallback)
 
         var logResult = new SignalCounter(2, function()
         {
+            log("testQueue: " + testQueue);
+            log(selectedArgs.skill_id);
+            log(testQueue.skillQueue.getQueue());
             logTestResult(testName, selectedArgs.skill_id == "magic", testQueue.skillQueue.getQueue() == ["magic2"]);
 
             if(testQueue.uiQTimer) window.clearTimeout(testQueue.uiQTimer);
             if(testQueue.pollQTimer) window.clearTimeout(testQueue.pollQTimer);
+            if(testQueue.refreshSkillTimeTimer) window.clearTimeout(testQueue.refreshSkillTimeTimer);
         });
 
         api.setAPICallback("skills.learn", function(args, e)
         {
             selectedArgs = args;
             logResult.sendSignal();
+
             api.setAPIOverride("skills.listLearning", { ok : 1, learning : { "blah" : { name: "Blah", time_remaining: 999999 } } });
             api.clearAPICallback("skills.learn");
         }, true);
@@ -448,6 +456,7 @@ function UnitTestCollection(completionCallback)
 
             if(testQueue.uiQTimer) window.clearTimeout(testQueue.uiQTimer);
             if(testQueue.pollQTimer) window.clearTimeout(testQueue.pollQTimer);
+            if(testQueue.refreshSkillTimeTimer) window.clearTimeout(testQueue.refreshSkillTimeTimer);
         });
 
         api.setAPICallback("skills.learn", function(args, e)
@@ -638,6 +647,12 @@ function QueueInterface(api, storageKey)
         this.pollQTimer = window.setTimeout(function() { this.pollJob(); }.bind(this), time * 1000);
     }
 
+    this.renewSkillTimeTimer = function(time)
+    {
+        if(this.skillTimeTimer != 0) window.clearTimeout(this.skillTimeTimer);
+        this.skillTimeTimer = window.setTimeout(function() { this.refreshSkillCompletionTime(); }.bind(this), time * 1000);
+    }
+
     // Set tool tip for skill currently being learnt
     this.setTooltipForCurrentLearning = function()
     {
@@ -805,9 +820,7 @@ function QueueInterface(api, storageKey)
                 $('#' + skillId + '_skill_error').html('');
                 $('#' + skillId + '_skill_error').hide();
                 $('#' + skillId + '_skillRemoveLink').hide();
-                var skill = this.skillQueue.availableSkills[skillId];
-                currentSkillExpires = skill.time_remaining + time();
-                this.renewPollTimer(skill.time_remaining);
+                this.refreshSkillCompletionTime();
             } 
             else
             {
@@ -833,6 +846,38 @@ function QueueInterface(api, storageKey)
 
     // Completetion datetime of the current skill being learned.
     this.currentSkillExpires = 0;
+
+    this.refreshSkillCompletionTime = function()
+    {
+        this.api.call("skills.listLearning", {}, function (e)
+        {
+            if(!e.ok || !e.learning)
+            {
+                log("Error getting skill status.");
+                return;
+            }
+
+            for(skillId in e.learning)
+            {
+                // Another skill was selected outside of this script.
+                var skill = e.learning[skillId];
+                var remaining = skill.time_remaining;
+                
+                var newSkillExpires = time() + remaining;
+                if(newSkillExpires != this.currentSkillExpires)
+                    log("Skill completion time changed. Compensating.");
+
+                this.currentSkillExpires = newSkillExpires;
+                // Poll once the skill is done.
+                this.renewPollTimer(remaining);
+                this.renewSkillTimeTimer(REPOLL_INTERVAL);
+
+                return;
+            }
+
+            this.pollJob();
+        }.bind(this));
+    }
 
     this.pollJob = function()
     {
@@ -862,17 +907,13 @@ function QueueInterface(api, storageKey)
             {
                 for(skillId in e.learning)
                 {
-                    // Another skill was selected outside of this script.
-                    var skill = e.learning[skillId];
-                    var remaining = skill.time_remaining;
-                    log("Skill " + skill.name + " selected outside of this script. Checking back on completion."); 
-                    currentSkillExpires = time() + remaining;
-                    // Poll once the skill is done.
-                    this.renewPollTimer(remaining);
-
+                    this.refreshSkillCompletionTime();
                     return;
                 }
             }
+
+            if(this.refreshLearnTimeTimer) window.clearTimeout(this.refreshLearnTimeTimer);
+            this.refreshLearnTimeTimer = 0;
 
             log("No skills are being learned.");
 
@@ -904,6 +945,7 @@ function QueueInterface(api, storageKey)
 
     this.uiQTimer = 0;
     this.pollQTimer = 0;
+    this.skillTimeTimer = 0;
 
     this.skillQueue = new GlitchQueue(this.storageKey);
     $('body').data("glitchq", this.skillQueue.getSavedQueue());
