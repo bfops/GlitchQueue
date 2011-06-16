@@ -214,6 +214,17 @@ function UnitTestCollection(completionCallback)
         }
     }
 
+    function cleanup(testQueue)
+    {
+        if(testQueue.uiQTimer != 0) window.clearTimeout(testQueue.uiQTimer);
+        if(testQueue.pollQTimer != 0) window.clearTimeout(testQueue.pollQTimer);
+        if(testQueue.skillTimeTimer != 0) window.clearTimeout(testQueue.skillTimeTimer);
+
+        testQueue.uiQTimer = 0;
+        testQueue.pollQTimer = 0;
+        testQueue.skillTimeTimer = 0;
+    }
+
     function test_signalCounter(testName)
     {
         var count = 4;
@@ -342,12 +353,14 @@ function UnitTestCollection(completionCallback)
                 if(!objEquals(q1, ["magic"]))
                 {
                     logTestResult(testName, false);
+                    cleanup(testQueue);
                     return;
                 }
 
                 testQueue.skillQueue.addSkillToQueue("magic2", function(q2)
                 {
                     logTestResult(testName, objEquals(q2, ["magic", "magic2"]));
+                    cleanup(testQueue);
                 });
             });
         });
@@ -373,15 +386,14 @@ function UnitTestCollection(completionCallback)
                 if(!objEquals(q1, ["magic"]))
                 {
                     logTestResult(testName, false);
+                    cleanup(testQueue);
                     return;
                 }
 
                 testQueue.skillQueue.removeSkillFromQueue("magic", function(q2)
                 {
                     logTestResult(testName, objEquals(q2, []));
-                    if(testQueue.uiQTimer) window.clearTimeout(testQueue.uiQTimer);
-                    if(testQueue.pollQTimer) window.clearTimeout(testQueue.pollQTimer);
-                    if(testQueue.refreshSkillTimeTimer) window.clearTimeout(testQueue.refreshSkillTimeTimer);
+                    cleanup(testQueue);
                 });
             });
         });
@@ -408,14 +420,8 @@ function UnitTestCollection(completionCallback)
 
         var logResult = new SignalCounter(2, function()
         {
-            log("testQueue: " + testQueue);
-            log(selectedArgs.skill_id);
-            log(testQueue.skillQueue.getQueue());
             logTestResult(testName, selectedArgs.skill_id == "magic", testQueue.skillQueue.getQueue() == ["magic2"]);
-
-            if(testQueue.uiQTimer) window.clearTimeout(testQueue.uiQTimer);
-            if(testQueue.pollQTimer) window.clearTimeout(testQueue.pollQTimer);
-            if(testQueue.refreshSkillTimeTimer) window.clearTimeout(testQueue.refreshSkillTimeTimer);
+            cleanup(testQueue);
         });
 
         api.setAPICallback("skills.learn", function(args, e)
@@ -453,10 +459,7 @@ function UnitTestCollection(completionCallback)
         var logResult = new SignalCounter(2, function()
         {
             logTestResult(testName, selectedArgs.skill_id == "magic", testQueue.skillQueue.getQueue() == ["magic2"]);
-
-            if(testQueue.uiQTimer) window.clearTimeout(testQueue.uiQTimer);
-            if(testQueue.pollQTimer) window.clearTimeout(testQueue.pollQTimer);
-            if(testQueue.refreshSkillTimeTimer) window.clearTimeout(testQueue.refreshSkillTimeTimer);
+            cleanup(testQueue);
         });
 
         api.setAPICallback("skills.learn", function(args, e)
