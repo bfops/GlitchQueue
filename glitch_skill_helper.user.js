@@ -6,14 +6,8 @@
 // @description         Manages skill-queuing for learning in Glitch.
 // ==/UserScript==
 
-// Don't change this unless you know what a unit test is, and you want to enable them, instead of the regular script.
-var unittest = true;
-// Poll intervals for different occurances (in seconds).
-// No learnable skills.
+// Poll interval when no skills are learnable (in seconds).
 var POLL_INTERVAL_UNLEARNABLE = 60; 
-// Game disabled.
-var POLL_INTERVAL_DISABLED = 300;
-// Other error encountered.
 var POLL_INTERVAL_ERROR = 60;
 // Interval at which to check if the skill time has changed from the estimate (in seconds).
 var REPOLL_INTERVAL = 10;
@@ -792,17 +786,9 @@ function QueueInterface(api, storageKey)
                 this.currentSkillExpires = 0;
                 var skillError = $('#' + skillId + '_skill_error');
 
-                if(e.error == "The game is disabled.")
-                {
-                    log("Game is disabled. Checking again in " + POLL_INTERVAL_DISABLED + " seconds.");
-                    this.renewPollTimer(POLL_INTERVAL_DISABLED);
-                }
-                else
-                {
-                    log("Error submitting skill: " + e.error + ". Checking again in " + POLL_INTERVAL_ERROR + " seconds.");
-                    this.renewPollTimer(POLL_INTERVAL_ERROR);
-                }
+                log("Error submitting skill: " + e.error + ". Checking again in " + POLL_INTERVAL_ERROR + " seconds.");
 
+                this.renewPollTimer(POLL_INTERVAL_ERROR);
                 skillError.html('Error: ' + e.error);
                 skillError.fadeIn('slow');
             }
@@ -952,24 +938,19 @@ $(document).ready(function()
         setUpGUI(queueInterface);
     }
 
-    if(unittest)
+    function testComplete(allSucceeded)
     {
-        function testComplete(allSucceeded)
+        if(allSucceeded)
+            runScript();
+        else
         {
-            if(allSucceeded)
-                runScript();
-            else
-            {
-                var error = "Not all unit tests passed! Stopping script.";
-                log(error);
-                alert(error);
-            }
+            var error = "Error: not all unit tests passed! Stopping script.";
+            log(error);
+            alert(error);
         }
-
-        log("In unit testing mode.");
-        var unittests = new UnitTestCollection(testComplete);
     }
-    else
-        runScript();
+
+    log("Running unit tests..");
+    var unittests = new UnitTestCollection(testComplete);
 });
 
