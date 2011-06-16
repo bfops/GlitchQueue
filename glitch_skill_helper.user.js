@@ -834,7 +834,8 @@ function QueueInterface(api, storageKey)
                 if(this.currentSkillExpires != 0 && Math.round(newSkillExpires / 10.0) != Math.round(this.currentSkillExpires / 10.0))
                 {
                     log("Skill completion time changed. Refreshing.");
-                    location.reload();
+                    queue.end = newSkillExpires;
+                    queue.skew = newSkillExpires - remaining - time();
                 }
 
                 this.currentSkillExpires = newSkillExpires;
