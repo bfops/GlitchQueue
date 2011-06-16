@@ -415,6 +415,8 @@ function UnitTestCollection(completionCallback)
         {
             selectedArgs = args;
             logResult.sendSignal();
+            api.setAPIOverride("skills.listLearning", { ok : 1, learning : { "blah" : { name: "Blah", time_remaining: 999999 } } });
+            api.clearAPICallback("skills.learn");
         }, true);
 
         testQueue = new QueueInterface(api, storage);
@@ -453,7 +455,10 @@ function UnitTestCollection(completionCallback)
             selectedArgs = args;
             logResult.sendSignal();
 
+            api.setAPIOverride("skills.listLearning", { ok : 1, learning : { "blah" : { name: "Blah", time_remaining: 999999 } } });
+            api.clearAPICallback("skills.learn");
         }, true);
+
         testQueue = new QueueInterface(api, storage);
         logResult.sendSignal();
     }
@@ -788,8 +793,6 @@ function QueueInterface(api, storageKey)
     {
         this.api.call("skills.learn", { skill_id : skillId }, function(e)
         {
-            log("Skill learn " + skillId + " submitted with result " + e.ok);
-
             if(e.ok)
             {
                 this.skillQueue.skillLearning = this.skillQueue.availableSkills[skillId];
