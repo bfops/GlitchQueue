@@ -15,8 +15,8 @@ var POLL_INTERVAL_UNLEARNABLE = 60;
 var POLL_INTERVAL_DISABLED = 300;
 // Other error encountered.
 var POLL_INTERVAL_ERROR = 60;
-// Interval at which to check if the skill time has changed from the estimate.
-var REPOLL_INTERVAL = 60;
+// Interval at which to check if the skill time has changed from the estimate (in seconds).
+var REPOLL_INTERVAL = 10;
 
 // Returns [a] \ [b] (i.e. all elements in [a] which are not in [b]).
 function relativeComplement(a, b)
