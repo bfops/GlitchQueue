@@ -795,6 +795,7 @@ function QueueInterface(api, storageKey)
                 if(this.uiQTimer) window.clearTimeout(this.uiQTimer);
                 this.uiQTimer = window.setTimeout(function() { this.updateSkillQueueProgress(skillId); }.bind(this), 1000);
 
+                log("Started learning " + this.skillQueue.availableSkills[skillId].name + ".");
                 this.skillQueue.removeSkillFromQueue(skillId);
                 $('#' + skillId + '_skill_error').html('');
                 $('#' + skillId + '_skill_error').hide();
@@ -802,7 +803,6 @@ function QueueInterface(api, storageKey)
                 var skill = this.skillQueue.availableSkills[skillId];
                 currentSkillExpires = skill.time_remaining + time();
                 this.renewPollTimer(skill.time_remaining);
-                log("Started learning " + skill.name + ".");
             } 
             else
             {
@@ -883,7 +883,7 @@ function QueueInterface(api, storageKey)
             {
                 var skillId = this.getFirstLearnableQueuedSkill();
 
-                if(skillId != undefined)
+                if(skillId)
                     this.trySkillSubmit(skillId);
                 else
                 {
