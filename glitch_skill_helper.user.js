@@ -100,16 +100,18 @@ function API()
         if(apiReturns[callName])
         {
             log("API call " + callName + " overriden.");
+            if(callbacks[callName] && callbacks[callName].before) callbacks[callName].callback(args, apiReturns[callName]);
             if(handler) handler(apiReturns[callName]);
-            if(callbacks[callName]) callbacks[callName](args, apiReturns[callName]);
+            if(callbacks[callName] && !callbacks[callName].before) callbacks[callName].callback(args, apiReturns[callName]);
         }
         else
         {
-            if(callbacks[callName])
+            if(callbacks[callName] && callbacks[callName].callback)
                 api_call(callName, args, function(e)
                 {
-                    handler(e);
-                    callbacks[callName](args, e);
+                    if(callbacks[callName].before) callbacks[callName].callback(args, apiReturns[callName]);
+                    if(handler) handler(apiReturns[callName]);
+                    if(!callbacks[callName].before) callbacks[callName].callback(args, apiReturns[callName]);
                 });
             else
                 api_call(callName, args, handler);
@@ -127,15 +129,15 @@ function API()
         this.setAPIOverride(apiCallName, undefined);
     }
 
-    // Call [callback] after the normal handler for [apiCallName] has been executed.
-    this.setAPICallback = function(apiCallName, callback)
+    // Call [callback] after the normal handler for [apiCallName] has been executed. Iff [before] is set, [callback] will be called before the typical handler.
+    this.setAPICallback = function(apiCallName, _callback, _before)
     {
-        callbacks[apiCallName] = callback;
+        callbacks[apiCallName] = { callback : _callback, before : _before };
     }
 
     this.clearAPICallback = function(apiCallName)
     {
-        this.setAPICallback(apiCallName, undefined);
+        callbacks[apiCallName] = undefined;
     }
 
     // Collection of API overrides.
@@ -308,7 +310,7 @@ function UnitTestCollection(completionCallback)
         testAPI.setAPICallback("test", function(args, e)
         {
             logTestResult(testName, correctCallbackCalledFirst);
-        });
+        }, false);
 
         testAPI.call("test", {}, function (e)
         {
@@ -413,7 +415,7 @@ function UnitTestCollection(completionCallback)
         {
             selectedArgs = args;
             logResult.sendSignal();
-        });
+        }, true);
 
         testQueue = new QueueInterface(api, storage);
         logResult.sendSignal();
@@ -450,8 +452,8 @@ function UnitTestCollection(completionCallback)
         {
             selectedArgs = args;
             logResult.sendSignal();
-        });
 
+        }, true);
         testQueue = new QueueInterface(api, storage);
         logResult.sendSignal();
     }
