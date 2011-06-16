@@ -216,11 +216,9 @@ function UnitTestCollection(completionCallback)
 
     function cleanup(testQueue)
     {
-        if(testQueue.uiQTimer != 0) window.clearTimeout(testQueue.uiQTimer);
         if(testQueue.pollQTimer != 0) window.clearTimeout(testQueue.pollQTimer);
         if(testQueue.skillTimeTimer != 0) window.clearTimeout(testQueue.skillTimeTimer);
 
-        testQueue.uiQTimer = 0;
         testQueue.pollQTimer = 0;
         testQueue.skillTimeTimer = 0;
     }
@@ -667,40 +665,6 @@ function QueueInterface(api, storageKey)
     }
 
     /**
-     * Updates UI progress bar for the skill being learnt
-     */
-    this.updateSkillQueueProgress = function(skillId)
-    {
-        var skill = this.skillQueue.skillLearning;
-        var remaining = this.currentSkillExpires - time();
-        var percentCompleted = (100 - (remaining / skill.total_time * 100));
-        $('#' + skillId + '_skill_indicator').show();
-
-        if(remaining > 0)
-        {
-            var prefix = "";
-            if(remaining <= 5) prefix = 'OMG OMG OMG OMG ';
-            else if(remaining <= 10) prefix = 'Almost there! ';
-            else if(remaining <= 15) prefix = 'You can do it! ';
-            else if(remaining <= 20) prefix = 'Oh, so close... ';
-
-            $('#' + skillId + '_skill_remaining').html(prefix + format_sec(remaining));
-            $('#' + skillId + '_skill_indicator').width((100 - (remaining / skill.total_time * 100)) + '%');
-
-            // Schedule UI update.
-            if(this.uiQTimer) window.clearTimeout(this.uiQTimer);
-            this.uiQTimer = window.setTimeout(function() { this.updateSkillQueueProgress(skillId) }.bind(this), 1000);
-        }
-        else
-        {
-            $('#' + skillId + '_skill_remaining').html('Done!');
-            window.clearTimeout(this.uiQTimer);
-            this.uiQTimer = 0;
-            $('#' + skillId + '_skill_indicator').width($('#' + skillId + '_skill_progress').innerWidth());
-        }
-    }
-
-    /**
      * Displays skills in queue in sidebar
      */
     this.displayQueuedItems = function()
@@ -815,15 +779,13 @@ function QueueInterface(api, storageKey)
             {
                 this.skillQueue.skillLearning = this.skillQueue.availableSkills[skillId];
 
-                if(this.uiQTimer) window.clearTimeout(this.uiQTimer);
-                this.uiQTimer = window.setTimeout(function() { this.updateSkillQueueProgress(skillId); }.bind(this), 1000);
-
                 log("Started learning " + this.skillQueue.availableSkills[skillId].name + ".");
                 this.skillQueue.removeSkillFromQueue(skillId);
                 $('#' + skillId + '_skill_error').html('');
                 $('#' + skillId + '_skill_error').hide();
                 $('#' + skillId + '_skillRemoveLink').hide();
                 this.refreshSkillCompletionTime();
+                $('#' + skillId + '_skill_indicator').show();
             } 
             else
             {
@@ -867,8 +829,13 @@ function QueueInterface(api, storageKey)
                 var remaining = skill.time_remaining;
                 
                 var newSkillExpires = time() + remaining;
-                if(newSkillExpires != this.currentSkillExpires)
-                    log("Skill completion time changed. Compensating.");
+
+                // Only alert if it's been a substantial change (because otherwise tiny changes due to lag will count).
+                if(this.currentSkillExpires != 0 && Math.round(newSkillExpires / 10.0) != Math.round(this.currentSkillExpires / 10.0))
+                {
+                    log("Skill completion time changed. Refreshing.");
+                    location.reload();
+                }
 
                 this.currentSkillExpires = newSkillExpires;
                 // Poll once the skill is done.
@@ -946,7 +913,6 @@ function QueueInterface(api, storageKey)
     this.api = api;
     this.storageKey = storageKey;
 
-    this.uiQTimer = 0;
     this.pollQTimer = 0;
     this.skillTimeTimer = 0;
 
