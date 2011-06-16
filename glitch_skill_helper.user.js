@@ -634,7 +634,7 @@ function QueueInterface(api, storageKey)
     // Set tool tip for skill currently being learnt
     this.setTooltipForCurrentLearning = function()
     {
-        var completeDate = new Date(currentSkillExpires * 1000);
+        var completeDate = new Date(this.currentSkillExpires * 1000);
 
         $('.progress').attr('title', 'Finishing at '
             + completeDate.getHours() + ':' + completeDate.getMinutes() + (completeDate.getHours() < 12 ? 'am' : 'pm')
@@ -647,7 +647,7 @@ function QueueInterface(api, storageKey)
     this.updateSkillQueueProgress = function(skillId)
     {
         var skill = this.skillQueue.skillLearning;
-        var remaining = currentSkillExpires - time();
+        var remaining = this.currentSkillExpires - time();
         var percentCompleted = (100 - (remaining / skill.total_time * 100));
         $('#' + skillId + '_skill_indicator').show();
 
@@ -663,14 +663,14 @@ function QueueInterface(api, storageKey)
             $('#' + skillId + '_skill_indicator').width((100 - (remaining / skill.total_time * 100)) + '%');
 
             // Schedule UI update.
-            if(uiQTimer) window.clearTimeout(uiQTimer);
-            uiQTimer = window.setTimeout(function() { this.updateSkillQueueProgress(skillId) }.bind(this), 1000);
+            if(this.uiQTimer) window.clearTimeout(this.uiQTimer);
+            this.uiQTimer = window.setTimeout(function() { this.updateSkillQueueProgress(skillId) }.bind(this), 1000);
         }
         else
         {
             $('#' + skillId + '_skill_remaining').html('Done!');
-            window.clearTimeout(uiQTimer);
-            uiQTimer = 0;
+            window.clearTimeout(this.uiQTimer);
+            this.uiQTimer = 0;
             $('#' + skillId + '_skill_indicator').width($('#' + skillId + '_skill_progress').innerWidth());
         }
     }
@@ -792,7 +792,7 @@ function QueueInterface(api, storageKey)
             {
                 this.skillQueue.skillLearning = this.skillQueue.availableSkills[skillId];
 
-                if(this.uiQTimer) window.clearTimeout(uiQTimer);
+                if(this.uiQTimer) window.clearTimeout(this.uiQTimer);
                 this.uiQTimer = window.setTimeout(function() { this.updateSkillQueueProgress(skillId); }.bind(this), 1000);
 
                 this.skillQueue.removeSkillFromQueue(skillId);
@@ -806,7 +806,7 @@ function QueueInterface(api, storageKey)
             } 
             else
             {
-                currentSkillExpires = 0;
+                this.currentSkillExpires = 0;
                 var skillError = $('#' + skillId + '_skill_error');
 
                 if(e.error == "The game is disabled.")
