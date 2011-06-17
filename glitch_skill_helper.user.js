@@ -600,7 +600,7 @@ function GlitchQueue(queueStorageKey)
         log("Renewing available skills cache.");
         api.call("skills.listAvailable", { per_page: 1024 }, function(e)
         {
-            if(e.ok && e.skills)
+            if(e.ok)
             {
                 this.availableSkills = e.skills;
                 if(handler) handler(e.skills);
@@ -614,15 +614,17 @@ function GlitchQueue(queueStorageKey)
         log("Renewing unlearned skills cache.");
         api.call("skills.listAll", { per_page: 1024 }, function(all)
         {
-            if(all.ok && all.items)
+            if(all.ok)
+            {
                 api.call("skills.listLearned", {}, function(learned)
                 {
-                    if(learned.ok && learned.skills)
+                    if(learned.ok)
                     {
                         this.unlearnedSkills = relativeComplement(all.items, learned.skills);
                         if(handler) handler(this.unlearnedSkills);
                     }
                 }.bind(this));
+            }
         }.bind(this));
     }
 
@@ -802,7 +804,7 @@ function QueueInterface(api, storageKey)
     {
         this.api.call("skills.listLearning", {}, function (e)
         {
-            if(!e.ok || !e.learning)
+            if(!e.ok)
             {
                 log("Error getting skill status.");
                 return;
