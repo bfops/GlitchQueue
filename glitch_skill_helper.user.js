@@ -142,7 +142,7 @@ function API()
     var callbacks = {};
 }
 
-// Temporary storage of items, with the same interface as window.localStorage.
+// Temporary storage of items, with the same interface as `window.localStorage`.
 function LocalStorage()
 {
     this.getItem = function(key)
@@ -561,6 +561,7 @@ function GlitchQueue(queueStorageKey)
     {
         if(this.queueStorageKey.get())
             return this.queueStorageKey.get().split(",");
+
         return [];
     };
 
