@@ -83,8 +83,6 @@ if(unsafeWindow)
     queue = unsafeWindow.queue;
     time = unsafeWindow.time;
     format_sec = unsafeWindow.format_sec;
-    setInterval = unsafeWindow.setInterval;
-    clearInterval = unsafeWindow.clearInterval;
     window = unsafeWindow;
 }
 
@@ -570,7 +568,7 @@ function GlitchQueue(queueStorageKey)
     // Send queue to local storage.
     this.setQueue = function(skillQueue, handler)
     {
-        log("Saving " + skillQueue);
+        log("Saving queue: " + skillQueue);
         this.queueStorageKey.remove();
         this.queueStorageKey.set(skillQueue.toString());
 
@@ -758,7 +756,7 @@ function QueueInterface(api, storageKey)
             + '</li>').hide();
         $('#skillQueue').append(skillQItem);
         $('#'+ skillId + '_skillRemoveLink').click(function() { this.skillQRemoveLink_onClick(skillId); }.bind(this));
-        skillQItem.fadeIn('slow');
+        skillQItem.fadeIn("slow");
     }
 
     this.trySkillSubmit = function(skillId)
@@ -781,14 +779,15 @@ function QueueInterface(api, storageKey)
             } 
             else
             {
-                this.currentSkillExpires = 0;
                 var skillError = $('#' + skillId + '_skill_error');
 
                 log("Error submitting skill: " + e.error + ". Checking again in " + POLL_INTERVAL_ERROR + " seconds.");
 
-                this.renewPollTimer(POLL_INTERVAL_ERROR);
                 skillError.html("Error: " + e.error);
                 skillError.fadeIn("slow");
+
+                this.currentSkillExpires = 0;
+                this.renewPollTimer(POLL_INTERVAL_ERROR);
             }
         }.bind(this));
     }
@@ -817,7 +816,7 @@ function QueueInterface(api, storageKey)
                 // Only alert if it's been a substantial change (because otherwise tiny changes due to lag will count).
                 if(this.currentSkillExpires != 0 && Math.round(newSkillExpires / 10.0) != Math.round(this.currentSkillExpires / 10.0))
                 {
-                    log("Skill completion time changed. Refreshing.");
+                    log("Skill completion time changed.");
                     queue.end = newSkillExpires;
                     queue.skew = newSkillExpires - remaining - time();
                 }
