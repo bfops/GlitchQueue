@@ -197,6 +197,56 @@ function SignalCounter(numberOfSignals, callback)
 // [completionCallback] is the function to call when all tests are completed.
 function UnitTestCollection(completionCallback)
 {
+    function DummyWrapper()
+    {
+        function DummyObject()
+        {
+            this.stored = new LocalStorage;
+
+            this.hide =
+            this.show =
+            this.html =
+            this.append =
+            this.remove =
+            this.val =
+            this.fadeIn =
+            this.fadeOut =
+            this.click =
+            function() { return this; }
+
+            this.data = function(x, y)
+            {
+                if(y)
+                    return this.stored.setItem(x, y);
+                else
+                    return this.stored.getItem(x);
+            }
+        }
+
+        this.location = new function()
+        {
+            this.reload = function() {}
+        }
+
+        this.objects = {};
+
+        this.get = function(name)
+        {
+            if(name == undefined)
+            {
+                if(this.undefObject == undefined)
+                    return this.undefObject = new DummyObject;
+
+                return this.undefObject;
+            }
+
+            if(this.objects[name] == undefined)
+                this.objects[name] = new DummyObject;
+
+            return this.objects[name];
+        }
+    }
+
     // A unit test is a function with a specific description.
     function UnitTest(func, name)
     {
@@ -334,7 +384,7 @@ function UnitTestCollection(completionCallback)
         api.setAPIOverride("skills.listLearning", { ok : 1, learning : {} });
         api.setAPIOverride("skills.learn", { ok : 1 });
 
-        var testQueue = new QueueInterface(api, new StorageKey(new LocalStorage, "x"));
+        var testQueue = new QueueInterface(api, new StorageKey(new LocalStorage, "x"), new DummyWrapper);
 
         testQueue.skillQueue.doUnlearnedSkillsCache(testQueue.api, function(e)
         {
@@ -367,7 +417,7 @@ function UnitTestCollection(completionCallback)
         api.setAPIOverride("skills.listLearning", { ok : 1, learning : {} });
         api.setAPIOverride("skills.learn", { ok : 1 });
 
-        var testQueue = new QueueInterface(api, new StorageKey(new LocalStorage, "x"));
+        var testQueue = new QueueInterface(api, new StorageKey(new LocalStorage, "x"), new DummyWrapper);
 
         testQueue.skillQueue.doUnlearnedSkillsCache(testQueue.api, function(e)
         {
@@ -423,7 +473,7 @@ function UnitTestCollection(completionCallback)
             api.clearAPICallback("skills.learn");
         }, true);
 
-        testQueue = new QueueInterface(api, storage);
+        testQueue = new QueueInterface(api, storage, new DummyWrapper);
         logResult.sendSignal();
     }
 
@@ -461,7 +511,7 @@ function UnitTestCollection(completionCallback)
             api.clearAPICallback("skills.learn");
         }, true);
 
-        testQueue = new QueueInterface(api, storage);
+        testQueue = new QueueInterface(api, storage, new DummyWrapper);
         logResult.sendSignal();
     }
 
@@ -552,7 +602,7 @@ function log(msg)
 /**
  *    Queue class encapsulates queue handling logic
  */
-function GlitchQueue(queueStorageKey)
+function GlitchQueue(queueStorageKey, wrap)
 {
     // Get queue from local storage.
     this.getQueue = function()
@@ -633,7 +683,7 @@ function GlitchQueue(queueStorageKey)
 }
 
 // Handles the queue's interactions with the user, the webpage, and the API.
-function QueueInterface(api, storageKey)
+function QueueInterface(api, storageKey, wrap)
 {
     // [time] is in seconds.
     this.renewPollTimer = function(time)
@@ -653,7 +703,7 @@ function QueueInterface(api, storageKey)
     {
         var completeDate = new Date(this.currentSkillExpires * 1000);
 
-        $('.progress').attr('title', 'Finishing at '
+        wrap.get(".progress").attr("title", "Finishing at "
             + completeDate.getHours() + ":" + completeDate.getMinutes() + (completeDate.getHours() < 12 ? "am" : "pm")
             + " on " + completeDate.getFullYear() + "." + completeDate.getMonth() + "." + completeDate.getDate());
     }
@@ -675,14 +725,14 @@ function QueueInterface(api, storageKey)
      */
     this.showAddQDialogue = function()
     {
-        var skillQueueSelect = $('#skillQueueSelect');
+        var skillQueueSelect = wrap.get("#skillQueueSelect");
         skillQueueSelect.html("<option value=''>Choose!</option>");
         for(skillId in this.skillQueue.unlearnedSkills)
         {
             var skill = this.skillQueue.unlearnedSkills[skillId];
-            skillQueueSelect.append($('<option style="border-top: dotted 1px #ccc;" value="' + skillId + '">' + skill.name + '</option>'));
+            skillQueueSelect.append(wrap.get("<option style=\"border-top: dotted 1px #ccc;\" value=\"" + skillId + "\">" + skill.name + "</option>"));
         }
-        $("#skillQueueDialogueCont").show();
+        wrap.get("#skillQueueDialogueCont").show();
     }
 
     /**
@@ -690,16 +740,15 @@ function QueueInterface(api, storageKey)
      */
     this.hideAddQDialogue = function()
     {
-        $("#skillQueueDialogueCont").hide();
+        wrap.get("#skillQueueDialogueCont").hide();
     }
 
     /**
      * Click event handler for the Add button in the Add Skill dialogue
      */
-    // TODO: Fix case where they add an already-added skill to the queue.
     this.skillQueueAddBtn_onClick = function()
     {
-        var skillId = $("#skillQueueSelect").val();
+        var skillId = wrap.get("#skillQueueSelect").val();
         if(skillId)
         {
             this.skillQueue.addSkillToQueue(skillId, function() { this.showSkillInQueue(skillId); }.bind(this));
@@ -716,9 +765,9 @@ function QueueInterface(api, storageKey)
     {
         this.skillQueue.removeSkillFromQueue(skillId, function()
         {
-            $('#' + skillId + '_skillqueue_item').fadeOut('fast', function()
+            wrap.get("#" + skillId + "_skillqueue_item").fadeOut("fast", function()
             {
-                $('#' + skillId + '_skillqueue_item').remove();
+                wrap.get("#" + skillId + "_skillqueue_item").remove();
             });
 
             if(this.skillQueue.getQueue().length == 0) this.pollJob();
@@ -743,19 +792,19 @@ function QueueInterface(api, storageKey)
         }
         var percentCompleted = (100 - (remaining / skill.total_time * 100));
 
-        var skillQItem = $('<li class="skillQueueItem" id="' + skillId + '_skillqueue_item">'
-            + '<div style="display: block; font-weight: bold; padding-bottom: 3px;" class="minor">' + skill.name + '</div>'
-            + '<div id="' + skillId + '_skill_error" class="skillError"></div>'
-            + '<a id="' + skillId + '_skillRemoveLink" title="Remove this skill from the Queue" style="color: #dd6666; font-size: 11px; float: right; display: block; padding-top: 4px;">X</a>'
-            + '<div id="' + skillId + '_skill_progress" class="progress" style="width: 200px; height: 22px; border-width: 2px; border-color: #a7b6bb;">'
-            + '<div id="' + skillId + '_skill_remaining" style="font-size: 11px; position: absolute; left: 0pt; top: 3px; text-align: center; width: 200px;">' + format_sec(remaining) + '</div>'
-            + '<div class="left"></div>'
-            + '<div id="' + skillId + '_skill_indicator" class="indicator" style="height: 22px; width: ' + percentCompleted + '%; display: ' + (percentCompleted > 0 ? "block" : "none") + ';">'
-            + '</div>'
-            + '</div>'
-            + '</li>').hide();
-        $('#skillQueue').append(skillQItem);
-        $('#'+ skillId + '_skillRemoveLink').click(function() { this.skillQRemoveLink_onClick(skillId); }.bind(this));
+        var skillQItem = wrap.get("<li class=\"skillQueueItem\" id=\"" + skillId + "_skillqueue_item\">"
+            + "<div style=\"display: block; font-weight: bold; padding-bottom: 3px;\" class=\"minor\">" + skill.name + "</div>"
+            + "<div id=\"" + skillId + "_skill_error\" class=\"skillError\"></div>"
+            + "<a id=\"" + skillId + "_skillRemoveLink\" title=\"Remove this skill from the Queue\" style=\"color: #dd6666; font-size: 11px; float: right; display: block; padding-top: 4px;\">X</a>"
+            + "<div class=\"progress\" style=\"width: 200px; height: 22px; border-width: 2px; border-color: #a7b6bb;\">"
+            + "<div style=\"font-size: 11px; position: absolute; left: 0pt; top: 3px; text-align: center; width: 200px;\">" + format_sec(remaining) + "</div>"
+            + "<div class=\"left\"></div>"
+            + "<div class=\"indicator\" style=\"height: 22px; width: " + percentCompleted + "%; display: " + (percentCompleted >= 0 ? "block" : "none") + ";\">"
+            + "</div>"
+            + "</div>"
+            + "</li>").hide();
+        wrap.get("#skillQueue").append(skillQItem);
+        wrap.get("#"+ skillId + "_skillRemoveLink").click(function() { this.skillQRemoveLink_onClick(skillId); }.bind(this));
         skillQItem.fadeIn("slow");
     }
 
@@ -771,18 +820,13 @@ function QueueInterface(api, storageKey)
                 log("Started learning " + name + ".");
 
                 this.skillQueue.removeSkillFromQueue(skillId);
-                $('#' + skillId + '_skill_error').html('');
-                $('#' + skillId + '_skill_error').hide();
-                $('#' + skillId + '_skillRemoveLink').hide();
-                this.refreshSkillCompletionTime();
-                $('#' + skillId + '_skill_indicator').show();
+                wrap.location.reload();
             } 
             else
             {
-                var skillError = $('#' + skillId + '_skill_error');
-
                 log("Error submitting skill: " + e.error + ". Checking again in " + POLL_INTERVAL_ERROR + " seconds.");
 
+                var skillError = wrap.get("#" + skillId + "_skill_error");
                 skillError.html("Error: " + e.error);
                 skillError.fadeIn("slow");
 
@@ -900,7 +944,7 @@ function QueueInterface(api, storageKey)
     this.pollQTimer = 0;
     this.skillTimeTimer = 0;
 
-    this.skillQueue = new GlitchQueue(this.storageKey);
+    this.skillQueue = new GlitchQueue(this.storageKey, wrap);
 
     // Display the queue after creating both caches.
     this.skillQueue.doUnlearnedSkillsCache(this.api, function(x)
@@ -932,7 +976,22 @@ $(document).ready(function()
         }
 
         log("Script started.");
-        var queueInterface = new QueueInterface(new API, new StorageKey(window.localStorage, "glitch_SkillQueue_" + playerTSID));
+        var queueInterface = new QueueInterface(new API, new StorageKey(window.localStorage, "glitch_SkillQueue_" + playerTSID), new function()
+        {
+            this.get = function(name)
+            {
+                return $(name);
+            }
+
+            this.location = new function()
+            {
+                this.reload = function()
+                {
+                    location.reload();
+                }
+            }
+        });
+
         setUpGUI(queueInterface);
     }
 
