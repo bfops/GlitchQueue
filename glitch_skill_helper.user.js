@@ -547,6 +547,7 @@ function UnitTestCollection(completionCallback)
         }
 
         var numberSucceeded = 0;
+        log("All tests completed! Results:");
         $.each(testResults, function(i, test)
         {
             log("Test " + (test.result ? "succeeded" : "failed") + ": " + test.name + ".");
