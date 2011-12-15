@@ -1,8 +1,7 @@
 // ==UserScript==
 // @name                Glitch Skill Helper
-// @include             http://beta.glitch.com
-// @include             http://beta.glitch.com/
-// @include             http://beta.glitch.com/#
+// @include             http://www.glitch.com/
+// @include             http://www.glitch.com/#
 // @description         Manages skill-queuing for learning in Glitch.
 // ==/UserScript==
 
