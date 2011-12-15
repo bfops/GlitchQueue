@@ -605,7 +605,7 @@ function log(msg)
     if(GM_log) GM_log(msg);
 }
 
-function GlitchQueue(queueStorageKey, wrap)
+function GlitchQueue(queueStorageKey)
 {
     // Get queue from local storage.
     this.getQueue = function()
@@ -749,7 +749,7 @@ function QueueInterface(api, storageKey, wrap)
             this.skillQueue.addSkillToQueue(skillId, function() { this.showSkillInQueue(skillId); }.bind(this));
 
             if(this.pollQTimer == 0)
-                this.renewPollTimer(1);
+                this.pollJob();
         }
     }
 
@@ -761,7 +761,7 @@ function QueueInterface(api, storageKey, wrap)
             this.wrap.get("#" + skillId + "_skillqueue_item").fadeOut("fast", function()
             {
                 this.wrap.get("#" + skillId + "_skillqueue_item").remove();
-            });
+            }.bind(this));
 
             if(this.skillQueue.getQueue().length == 0) this.pollJob();
         }.bind(this));
@@ -930,7 +930,7 @@ function QueueInterface(api, storageKey, wrap)
 
     this.wrap = wrap;
 
-    this.skillQueue = new GlitchQueue(this.storageKey, wrap);
+    this.skillQueue = new GlitchQueue(this.storageKey);
 
     // Display the queue after creating both caches.
     this.skillQueue.doUnlearnedSkillsCache(this.api, function(x)
