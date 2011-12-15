@@ -604,9 +604,6 @@ function log(msg)
     if(GM_log) GM_log(msg);
 }
 
-/**
- *    Queue class encapsulates queue handling logic
- */
 function GlitchQueue(queueStorageKey, wrap)
 {
     // Get queue from local storage.
@@ -708,14 +705,12 @@ function QueueInterface(api, storageKey, wrap)
     {
         var completeDate = new Date(this.currentSkillExpires * 1000);
 
-        wrap.get(".progress").attr("title", "Finishing at "
+        this.wrap.get(".progress").attr("title", "Finishing at "
             + completeDate.getHours() + ":" + completeDate.getMinutes() + (completeDate.getHours() < 12 ? "am" : "pm")
             + " on " + completeDate.getFullYear() + "." + completeDate.getMonth() + "." + completeDate.getDate());
     }
 
-    /**
-     * Displays skills in queue in sidebar
-     */
+    // Displays skills in queue in sidebar
     this.displayQueuedItems = function()
     {
         var q = this.skillQueue.getQueue();
@@ -725,35 +720,29 @@ function QueueInterface(api, storageKey, wrap)
         }.bind(this));
     }
 
-    /**
-     * Displays Add Skill dialogue UI - used by +Add link
-     */
+    // Displays Add Skill dialogue UI - used by +Add link
     this.showAddQDialogue = function()
     {
-        var skillQueueSelect = wrap.get("#skillQueueSelect");
+        var skillQueueSelect = this.wrap.get("#skillQueueSelect");
         skillQueueSelect.html("<option value=''>Choose!</option>");
         for(skillId in this.skillQueue.unlearnedSkills)
         {
             var skill = this.skillQueue.unlearnedSkills[skillId];
-            skillQueueSelect.append(wrap.get("<option style=\"border-top: dotted 1px #ccc;\" value=\"" + skillId + "\">" + skill.name + "</option>"));
+            skillQueueSelect.append(this.wrap.get("<option style=\"border-top: dotted 1px #ccc;\" value=\"" + skillId + "\">" + skill.name + "</option>"));
         }
-        wrap.get("#skillQueueDialogueCont").show();
+        this.wrap.get("#skillQueueDialogueCont").show();
     }
 
-    /**
-     * Hides Add Skill dialogue UI - used by dialogue's close button
-     */
+    // Hides Add Skill dialogue UI - used by dialogue's close button
     this.hideAddQDialogue = function()
     {
-        wrap.get("#skillQueueDialogueCont").hide();
+        this.wrap.get("#skillQueueDialogueCont").hide();
     }
 
-    /**
-     * Click event handler for the Add button in the Add Skill dialogue
-     */
+    // Click event handler for the Add button in the Add Skill dialogue
     this.skillQueueAddBtn_onClick = function()
     {
-        var skillId = wrap.get("#skillQueueSelect").val();
+        var skillId = this.wrap.get("#skillQueueSelect").val();
         if(skillId)
         {
             this.skillQueue.addSkillToQueue(skillId, function() { this.showSkillInQueue(skillId); }.bind(this));
@@ -763,25 +752,21 @@ function QueueInterface(api, storageKey, wrap)
         }
     }
 
-    /**
-     * Click event handler for the Remove [X] skill link
-     */
+    // Click event handler for the Remove [X] skill link
     this.skillQRemoveLink_onClick = function(skillId)
     {
         this.skillQueue.removeSkillFromQueue(skillId, function()
         {
-            wrap.get("#" + skillId + "_skillqueue_item").fadeOut("fast", function()
+            this.wrap.get("#" + skillId + "_skillqueue_item").fadeOut("fast", function()
             {
-                wrap.get("#" + skillId + "_skillqueue_item").remove();
+                this.wrap.get("#" + skillId + "_skillqueue_item").remove();
             });
 
             if(this.skillQueue.getQueue().length == 0) this.pollJob();
         }.bind(this));
     }
 
-    /**
-     * Displays individual skill details in the sidebar queue
-     */
+    // Displays individual skill details in the sidebar queue
     this.showSkillInQueue = function(skillId)
     {
         var skill, remaining;
@@ -797,7 +782,7 @@ function QueueInterface(api, storageKey, wrap)
         }
         var percentCompleted = (100 - (remaining / skill.total_time * 100));
 
-        var skillQItem = wrap.get("<li class=\"skillQueueItem\" id=\"" + skillId + "_skillqueue_item\">"
+        var skillQItem = this.wrap.get("<li class=\"skillQueueItem\" id=\"" + skillId + "_skillqueue_item\">"
             + "<div style=\"display: block; font-weight: bold; padding-bottom: 3px;\" class=\"minor\">" + skill.name + "</div>"
             + "<div id=\"" + skillId + "_skill_error\" class=\"skillError\"></div>"
             + "<a id=\"" + skillId + "_skillRemoveLink\" title=\"Remove this skill from the Queue\" style=\"color: #dd6666; font-size: 11px; float: right; display: block; padding-top: 4px;\">X</a>"
@@ -808,8 +793,8 @@ function QueueInterface(api, storageKey, wrap)
             + "</div>"
             + "</div>"
             + "</li>").hide();
-        wrap.get("#skillQueue").append(skillQItem);
-        wrap.get("#"+ skillId + "_skillRemoveLink").click(function() { this.skillQRemoveLink_onClick(skillId); }.bind(this));
+        this.wrap.get("#skillQueue").append(skillQItem);
+        this.wrap.get("#"+ skillId + "_skillRemoveLink").click(function() { this.skillQRemoveLink_onClick(skillId); }.bind(this));
         skillQItem.fadeIn("slow");
     }
 
@@ -825,7 +810,7 @@ function QueueInterface(api, storageKey, wrap)
                 log("Started learning " + name + ".");
 
                 this.skillQueue.removeSkillFromQueue(skillId);
-                wrap.location.reload();
+                this.wrap.location.reload();
             } 
             else
             {
@@ -856,7 +841,7 @@ function QueueInterface(api, storageKey, wrap)
 
             for(skillId in e.learning)
             {
-                // Another skill was selected outside of this script.
+                // A skill is being learned.
                 var skill = e.learning[skillId];
                 var remaining = skill.time_remaining;
                 
@@ -864,11 +849,7 @@ function QueueInterface(api, storageKey, wrap)
 
                 // Only alert if it's been a substantial change (because otherwise tiny changes due to lag will count).
                 if(this.currentSkillExpires != 0 && Math.round(newSkillExpires / 10.0) != Math.round(this.currentSkillExpires / 10.0))
-                {
                     log("Skill completion time changed.");
-                    queue.end = newSkillExpires;
-                    queue.skew = newSkillExpires - remaining - time();
-                }
 
                 this.currentSkillExpires = newSkillExpires;
                 // Poll once the skill is done.
@@ -915,9 +896,6 @@ function QueueInterface(api, storageKey, wrap)
                 }
             }
 
-            if(this.refreshLearnTimeTimer) window.clearTimeout(this.refreshLearnTimeTimer);
-            this.refreshLearnTimeTimer = 0;
-
             log("No skills are being learned.");
 
             if(q.length == 0)
@@ -948,6 +926,8 @@ function QueueInterface(api, storageKey, wrap)
 
     this.pollQTimer = 0;
     this.skillTimeTimer = 0;
+
+    this.wrap = wrap;
 
     this.skillQueue = new GlitchQueue(this.storageKey, wrap);
 
@@ -1006,7 +986,7 @@ $(document).ready(function()
             runScript();
         else
         {
-            var error = "Error: not all unit tests passed! Stopping script.";
+            var error = "Error: Not all unit tests passed! Stopping script.";
             log(error);
             alert(error);
         }
