@@ -73,9 +73,7 @@ if(GM_registerMenuCommand)
         alert("ping's skill queuer for Glitch, modified by RobotGymnast.");
     });
 
-/**
- * unsafeWindow variables / functions
- */
+// unsafeWindow variables / functions
 if(unsafeWindow)
 {
     $ = unsafeWindow.$;
@@ -197,6 +195,15 @@ function SignalCounter(numberOfSignals, callback)
 // [completionCallback] is the function to call when all tests are completed.
 function UnitTestCollection(completionCallback)
 {
+    function cleanup(testQueue)
+    {
+        if(testQueue.pollQTimer != 0) window.clearTimeout(testQueue.pollQTimer);
+        if(testQueue.skillTimeTimer != 0) window.clearTimeout(testQueue.skillTimeTimer);
+
+        testQueue.pollQTimer = 0;
+        testQueue.skillTimeTimer = 0;
+    }
+
     function DummyWrapper()
     {
         function DummyObject()
@@ -225,7 +232,9 @@ function UnitTestCollection(completionCallback)
 
         this.location = new function()
         {
-            this.reload = function() {}
+            this.reload = function()
+            {
+            }
         }
 
         this.objects = {};
@@ -254,15 +263,6 @@ function UnitTestCollection(completionCallback)
         {
             func(name);
         }
-    }
-
-    function cleanup(testQueue)
-    {
-        if(testQueue.pollQTimer != 0) window.clearTimeout(testQueue.pollQTimer);
-        if(testQueue.skillTimeTimer != 0) window.clearTimeout(testQueue.skillTimeTimer);
-
-        testQueue.pollQTimer = 0;
-        testQueue.skillTimeTimer = 0;
     }
 
     function test_signalCounter(testName)
