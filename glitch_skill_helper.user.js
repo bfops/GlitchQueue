@@ -260,6 +260,7 @@ function UnitTestCollection(completionCallback)
     {
         this.run = function()
         {
+            log("Running test " + name + ".");
             func(name);
         }
     }
@@ -514,27 +515,8 @@ function UnitTestCollection(completionCallback)
         logResult.sendSignal();
     }
 
+
     var testResults = [];
-    var numberSucceeded = 0;
-
-    function logTestResult(testName, result)
-    {
-        testResults.push({ name : testName, "result" : result });
-        if(result == true)
-            ++numberSucceeded;
-
-        if(testResults.length == unittests.length)
-        {
-            $.each(testResults, function(i, test)
-            {
-                log("Test " + (test["result"] ? "succeeded" : "failed") + ": " + test["name"]);
-            });
-            log(numberSucceeded + "/" + testResults.length + " tests succeeded.");
-
-            if(completionCallback)
-                completionCallback(numberSucceeded == testResults.length);
-        }
-    }
 
     var unittests = [
         new UnitTest(test_signalCounter, "Signal-counter class"),
@@ -550,10 +532,34 @@ function UnitTestCollection(completionCallback)
         new UnitTest(test_noSkillLoadQueueMiddleLearnable, "Page load with queue including learnable skill 2")
     ];
 
-    $.each(unittests, function(i, test)
+    var nTests = unittests.length;
+    function logTestResult(testName, result)
     {
-        test.run();
-    });
+        log("Test " + (result ? "succeeded" : "failed") + ": " + testName + ".");
+
+        unittests.splice(0, 1);
+        testResults.push({ name : testName, "result" : result });
+
+        if(unittests.length > 0)
+        {
+            unittests[0].run();
+            return;
+        }
+
+        var numberSucceeded = 0;
+        $.each(testResults, function(i, test)
+        {
+            log("Test " + (test.result ? "succeeded" : "failed") + ": " + test.name + ".");
+            if(test.result)
+                ++numberSucceeded;
+        });
+        log(numberSucceeded + "/" + nTests + " tests succeeded.");
+
+        if(completionCallback)
+            completionCallback(numberSucceeded == nTests);
+    }
+
+    unittests[0].run();
 }
 
 // Skill Queue styling
