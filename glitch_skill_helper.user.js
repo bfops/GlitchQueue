@@ -384,7 +384,7 @@ function UnitTestCollection(completionCallback)
         api.setAPIOverride("skills.listLearning", { ok : 1, learning : {} });
         api.setAPIOverride("skills.learn", { ok : 1 });
 
-        var testQueue = new QueueInterface(api, new StorageKey(new LocalStorage, "x"), -1, new DummyWrapper);
+        var testQueue = new QueueInterface(api, new StorageKey(new LocalStorage, "x"), new DummyWrapper);
 
         testQueue.skillQueue.doUnlearnedSkillsCache(testQueue.api, function(e)
         {
@@ -417,7 +417,7 @@ function UnitTestCollection(completionCallback)
         api.setAPIOverride("skills.listLearning", { ok : 1, learning : {} });
         api.setAPIOverride("skills.learn", { ok : 1 });
 
-        var testQueue = new QueueInterface(api, new StorageKey(new LocalStorage, "x"), -1, new DummyWrapper);
+        var testQueue = new QueueInterface(api, new StorageKey(new LocalStorage, "x"), new DummyWrapper);
 
         testQueue.skillQueue.doUnlearnedSkillsCache(testQueue.api, function(e)
         {
@@ -473,8 +473,7 @@ function UnitTestCollection(completionCallback)
             api.clearAPICallback("skills.learn");
         }, true);
 
-        testQueue = new QueueInterface(api, storage, -1, new DummyWrapper);
-
+        testQueue = new QueueInterface(api, storage, new DummyWrapper);
         logResult.sendSignal();
     }
 
@@ -512,145 +511,8 @@ function UnitTestCollection(completionCallback)
             api.clearAPICallback("skills.learn");
         }, true);
 
-        testQueue = new QueueInterface(api, storage, -1, new DummyWrapper);
+        testQueue = new QueueInterface(api, storage, new DummyWrapper);
         logResult.sendSignal();
-    }
-
-    function test_circumventionBuffer(testName)
-    {
-        function removeMember(obj, member)
-        {
-            var ret = {};
-
-            for(x in obj)
-                if(x != member)
-                    ret[x] = obj[x];
-
-            return ret;
-        }
-
-        var circumventionTime = 2;
-        var api = new API;
-        var magicSkill = { name : "Magic", total_time : circumventionTime + 2, time_remaining : circumventionTime + 2 };
-        var magic2Skill = objClone(magicSkill);
-        var magic3Skill = objClone(magicSkill);
-        var magic4Skill = objClone(magicSkill);
-        var magic5Skill = objClone(magicSkill);
-        magic2Skill.name = "Magic 2";
-        magic3Skill.name = "Magic 3";
-
-        var all = { ok : 1, items : { magic : magicSkill, magic2 : magic2Skill, magic3 : magic3Skill } };
-        var available = { ok : 1, skills : { magic : magicSkill, magic2 : magic2Skill, magic3 : magic3Skill } };
-        var learned = { ok : 1, skills : {} };
-        var learning = { ok : 1, learning : {} };
-        api.setAPIOverride("skills.listAll", all);
-        api.setAPIOverride("skills.listAvailable", available);
-        api.setAPIOverride("skills.listLearned", learned);
-        api.setAPIOverride("skills.listLearning", learning);
-        api.setAPIOverride("skills.learn", { ok : 1 });
-
-        var storage = new StorageKey(new LocalStorage, "x");
-        var queueLeft = ["magic", "magic2", "magic3"];
-        storage.set(queueLeft.toString());
-
-        var testQueue;
-        var id;
-        var completion = 0;
-
-        function logResult()
-        {
-            var result = true;
-            // Don't check the last member, since we finish the test before it's been docked to less than circumventionTime
-            for(skill in removeMember(all.items, "magic3"))
-                if(all.items[skill].time_remaining > circumventionTime)
-                    result = false;
-
-            logTestResult(testName, result);
-            cleanup(testQueue);
-        }
-
-        function fixLearning()
-        {
-            if(completion == 0)
-                return;
-
-            if(time() < completion)
-            {
-                learning.learning[id].time_remaining
-                = available.skills[id].time_remaining
-                = all.items[id].time_remaining
-                = completion - time();
-
-                return;
-            }
-
-            completion = 0;
-            learning.learning = {};
-            all.items[id].time_remaining = 0;
-            learned.skills[id] = all.items[id];
-            available.skills = removeMember(available.skills, id);
-        }
-
-        function fixLearningCallback(x, y)
-        {
-            fixLearning();
-        }
-
-        api.setAPICallback("skills.listLearning", fixLearningCallback, true);
-
-        api.setAPICallback("skills.learn", function(args, e)
-        {
-            fixLearning();
-            id = args.skill_id;
-
-            if(queueLeft.length == 0 || id != queueLeft[0])
-            {
-                logTestResult(testName, false);
-                cleanup(testQueue);
-                return;
-            }
-
-            if(id == "magic3" || queueLeft.length == 1)
-                logResult();
-
-            queueLeft.splice(0, 1);
-
-            learning.learning = {};
-            learning.learning[id] = { time_remaining : available.skills[id].time_remaining };
-            completion = time() + available.skills[args.skill_id].time_remaining;
-        }, true);
-
-        var reloaded = false;
-        var wrap = new DummyWrapper;
-        wrap.location.reload = function()
-        {
-            reloaded = true;
-        }
-
-        testQueue = new QueueInterface(api, storage, circumventionTime, wrap);
-        var objBackup;
-
-        wrap.location.reload = function()
-        {
-            cleanup(testQueue);
-            testQueue = objClone(objBackup);
-
-            // Display the queue after creating both caches.
-            testQueue.skillQueue.doUnlearnedSkillsCache(api, function(x)
-            {
-                testQueue.skillQueue.doAvailableSkillsCache(api, function(x)
-                {
-                    this.displayQueuedItems();
-                }.bind(this));
-            }.bind(testQueue));
-
-            testQueue.pollJob();
-        };
-
-        objBackup = objClone(testQueue);
-
-        if(reloaded)
-            testQueue.wrap.location.reload();
     }
 
     var testResults = [];
@@ -666,8 +528,7 @@ function UnitTestCollection(completionCallback)
         new UnitTest(test_addToQueue, "Adding to queue"),
         new UnitTest(test_removeFromQueue, "Removing from queue"),
         new UnitTest(test_noSkillLoadQueueFrontLearnable, "Page load with queue including learnable skill"),
-        new UnitTest(test_noSkillLoadQueueMiddleLearnable, "Page load with queue including learnable skill 2"),
-        new UnitTest(test_circumventionBuffer, "Circumventing diminishing returns")
+        new UnitTest(test_noSkillLoadQueueMiddleLearnable, "Page load with queue including learnable skill 2")
     ];
 
     var nTests = unittests.length;
@@ -824,14 +685,8 @@ function GlitchQueue(queueStorageKey)
 }
 
 // Handles the queue's interactions with the user, the webpage, and the API.
-// TODO: Add option for cycling through to finish learning all skills, after the queue is gone.
-function QueueInterface(api, storageKey, circumventionBuffer, wrap)
+function QueueInterface(api, storageKey, wrap)
 {
-    if(circumventionBuffer > 0)
-        log("Circumventing returns: yes.");
-    else
-        log("Circumventing returns: no.");
-
     // [time] is in seconds.
     this.renewPollTimer = function(time)
     {
@@ -956,17 +811,18 @@ function QueueInterface(api, storageKey, circumventionBuffer, wrap)
 
                 this.skillQueue.removeSkillFromQueue(skillId);
                 this.wrap.location.reload();
-                return;
             } 
+            else
+            {
+                log("Error submitting skill: " + e.error + ". Checking again in " + POLL_INTERVAL_ERROR + " seconds.");
 
-            log("Error submitting skill: " + e.error + ". Trying again in " + POLL_INTERVAL_ERROR + " seconds.");
+                var skillError = wrap.get("#" + skillId + "_skill_error");
+                skillError.html("Error: " + e.error);
+                skillError.fadeIn("slow");
 
-            var skillError = this.wrap.get("#" + skillId + "_skill_error");
-            skillError.html("Error: " + e.error);
-            skillError.fadeIn("slow");
-
-            this.currentSkillExpires = 0;
-            this.renewPollTimer(POLL_INTERVAL_ERROR);
+                this.currentSkillExpires = 0;
+                this.renewPollTimer(POLL_INTERVAL_ERROR);
+            }
         }.bind(this));
     }
 
@@ -980,14 +836,15 @@ function QueueInterface(api, storageKey, circumventionBuffer, wrap)
             if(!e.ok)
             {
                 log("Error getting skill status.");
-                this.renewSkillTimer(POLL_INTERVAL_ERROR);
                 return;
             }
 
             for(skillId in e.learning)
             {
                 // A skill is being learned.
-                var remaining = e.learning[skillId].time_remaining;
+                var skill = e.learning[skillId];
+                var remaining = skill.time_remaining;
+                
                 var newSkillExpires = time() + remaining;
 
                 // Only alert if it's been a substantial change (because otherwise tiny changes due to lag will count).
@@ -995,10 +852,6 @@ function QueueInterface(api, storageKey, circumventionBuffer, wrap)
                     log("Skill completion time changed.");
 
                 this.currentSkillExpires = newSkillExpires;
-
-                if(circumventionBuffer > 0)
-                    remaining -= circumventionBuffer;
-
                 // Poll once the skill is done.
                 this.renewPollTimer(remaining);
                 this.renewSkillTimeTimer(REPOLL_INTERVAL);
@@ -1039,16 +892,11 @@ function QueueInterface(api, storageKey, circumventionBuffer, wrap)
                 for(skillId in e.learning)
                 {
                     this.refreshSkillCompletionTime();
-
-                    if(this.currentSkillExpires == 0 || circumventionBuffer < 0 || this.currentSkillExpires > time() + circumventionBuffer)
-                        return;
-
-                    log("Circumventing skill " + skillId);
+                    return;
                 }
             }
 
-            if(circumventionBuffer < 0)
-                log("No skills are being learned.");
+            log("No skills are being learned.");
 
             if(q.length == 0)
             {
@@ -1113,7 +961,7 @@ $(document).ready(function()
         }
 
         log("Script started.");
-        var queueInterface = new QueueInterface(new API, new StorageKey(window.localStorage, "glitch_SkillQueue_" + playerTSID), 10, new function()
+        var queueInterface = new QueueInterface(new API, new StorageKey(window.localStorage, "glitch_SkillQueue_" + playerTSID), new function()
         {
             this.get = function(name)
             {
