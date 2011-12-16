@@ -980,6 +980,7 @@ function QueueInterface(api, storageKey, circumventionBuffer, wrap)
             if(!e.ok)
             {
                 log("Error getting skill status.");
+                this.renewSkillTimer(POLL_INTERVAL_ERROR);
                 return;
             }
 
