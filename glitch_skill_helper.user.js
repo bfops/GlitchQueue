@@ -23,7 +23,7 @@ function relativeComplement(a, b)
     return ret;
 }
 
-// Returns true iff all of [a]'s members equal [b]'s corresponding members.
+// Returns true iff all of [a]'s members equal [b]'s corresponding members, and vice-versa.
 function objEquals(a, b)
 {
     for(x in b)
@@ -836,6 +836,7 @@ function QueueInterface(api, storageKey, wrap)
             if(!e.ok)
             {
                 log("Error getting skill status.");
+                renewSkillTimeTimer(POLL_INTERVAL_ERROR);
                 return;
             }
 
